@@ -7,6 +7,7 @@ import { ClientsSection } from './ClientsSection';
 import { ClientTypesManager } from './ClientTypesManager';
 import { DocumentsSection } from './DocumentsSection';
 import { NotificationsSection } from './NotificationsSection';
+import { RegistrationSection } from './RegistrationSection';
 
 export const AdminLayout = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -23,6 +24,8 @@ export const AdminLayout = () => {
         return <DocumentsSection />;
       case 'notifications':
         return <NotificationsSection />;
+      case 'registrations':
+        return <RegistrationSection />;
       case 'contracts':
         return <div className="p-6"><h2 className="text-2xl font-bold">Contratos</h2><p>Seção em desenvolvimento...</p></div>;
       case 'reports':
