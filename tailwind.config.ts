@@ -26,8 +26,8 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: '#0078ae',
-					light: '#50b0bc',
+					DEFAULT: '#1a237e',
+					light: '#00a693',
 					foreground: '#ffffff'
 				},
 				secondary: {
@@ -64,10 +64,14 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Cores específicas da e-Rentav
+				// Cores oficiais da e-Rentav baseadas nas logos
 				erentav: {
-					primary: '#0078ae',
-					secondary: '#50b0bc',
+					primary: '#1a237e', // Azul mais profundo da logo
+					secondary: '#00a693', // Verde/turquesa da logo
+					gradient: {
+						from: '#1a237e',
+						to: '#00a693'
+					},
 					neutral: {
 						light: '#f5f5f5',
 						dark: '#333333'
@@ -127,8 +131,11 @@ export default {
 				'scale-in': 'scale-in 0.2s ease-out'
 			},
 			boxShadow: {
-				'erentav': '0 4px 6px -1px rgba(0, 120, 174, 0.1), 0 2px 4px -1px rgba(0, 120, 174, 0.06)',
-				'erentav-lg': '0 10px 15px -3px rgba(0, 120, 174, 0.1), 0 4px 6px -2px rgba(0, 120, 174, 0.05)'
+				'erentav': '0 4px 6px -1px rgba(26, 35, 126, 0.1), 0 2px 4px -1px rgba(26, 35, 126, 0.06)',
+				'erentav-lg': '0 10px 15px -3px rgba(26, 35, 126, 0.1), 0 4px 6px -2px rgba(26, 35, 126, 0.05)'
+			},
+			backgroundImage: {
+				'erentav-gradient': 'linear-gradient(135deg, #1a237e 0%, #00a693 100%)',
 			}
 		}
 	},

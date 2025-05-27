@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,8 +13,7 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  LogOut,
-  Building2
+  LogOut
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -92,8 +90,12 @@ export const ClientDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-erentav-primary rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
+                <img 
+                  src="/lovable-uploads/75f6e7da-3f6e-4269-b1ea-f48bd08979b2.png" 
+                  alt="e-Rentav Logo" 
+                  className="w-8 h-8 object-contain"
+                />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-erentav-primary">e-Rentav</h1>

@@ -87,7 +87,7 @@
   }
 
   .erentav-gradient {
-    background: linear-gradient(135deg, #0078ae 0%, #50b0bc 100%);
+    background: linear-gradient(135deg, #1a237e 0%, #00a693 100%);
   }
 
   .erentav-card {
@@ -95,6 +95,6 @@
   }
 
   .erentav-button {
-    @apply bg-erentav-primary hover:bg-erentav-secondary text-white font-medium px-6 py-3 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md;
+    @apply bg-erentav-gradient hover:opacity-90 text-white font-medium px-6 py-3 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md;
   }
 }

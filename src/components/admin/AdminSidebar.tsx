@@ -18,7 +18,6 @@ import {
   FileText, 
   Bell, 
   Settings, 
-  Building2,
   LogOut,
   CreditCard,
   BarChart3
@@ -80,8 +79,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
     <Sidebar className="border-r border-gray-200">
       <SidebarHeader className="p-4">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-erentav-primary rounded-lg flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
+            <img 
+              src="/lovable-uploads/75f6e7da-3f6e-4269-b1ea-f48bd08979b2.png" 
+              alt="e-Rentav Logo" 
+              className="w-8 h-8 object-contain"
+            />
           </div>
           <div>
             <h2 className="font-bold text-lg text-erentav-primary">e-Rentav</h2>
@@ -138,7 +141,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
         <div className="flex items-center space-x-3 mb-3">
           <Avatar className="w-8 h-8">
             <AvatarImage src={user?.avatar} />
-            <AvatarFallback className="bg-erentav-primary text-white text-xs">
+            <AvatarFallback className="bg-erentav-gradient text-white text-xs">
               {user?.name?.split(' ').map(n => n[0]).join('')}
             </AvatarFallback>
           </Avatar>

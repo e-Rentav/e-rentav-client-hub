@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock, Building2 } from 'lucide-react';
+import { Loader2, Mail, Lock } from 'lucide-react';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -43,12 +43,16 @@ export const LoginForm = () => {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-erentav-primary to-erentav-secondary p-4">
+    <div className="min-h-screen flex items-center justify-center bg-erentav-gradient p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Logo e branding */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-            <Building2 className="w-8 h-8 text-erentav-primary" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-3xl shadow-lg mb-4">
+            <img 
+              src="/lovable-uploads/75f6e7da-3f6e-4269-b1ea-f48bd08979b2.png" 
+              alt="e-Rentav Logo" 
+              className="w-16 h-16 object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">e-Rentav</h1>
           <p className="text-white/80">Sistema de Gestão de Clientes e Documentos</p>
