@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
+import { ClientRegistration } from './ClientRegistration';
 import { 
   Upload, 
   FileText, 
@@ -24,6 +25,7 @@ import { toast } from '@/hooks/use-toast';
 export const OfficeDashboard = () => {
   const { user, logout } = useAuth();
   const [uploading, setUploading] = useState(false);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'client-registration'>('dashboard');
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -89,6 +91,10 @@ export const OfficeDashboard = () => {
     return 'Escritório';
   };
 
+  if (currentView === 'client-registration') {
+    return <ClientRegistration onBack={() => setCurrentView('dashboard')} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -96,7 +102,7 @@ export const OfficeDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
+              <div className="w-10 h-10 flex items-center justify-center">
                 <img 
                   src="/lovable-uploads/75f6e7da-3f6e-4269-b1ea-f48bd08979b2.png" 
                   alt="e-Rentav Logo" 
@@ -209,7 +215,10 @@ export const OfficeDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Button className="erentav-button h-16 flex-col">
+                  <Button 
+                    className="erentav-button h-16 flex-col"
+                    onClick={() => setCurrentView('client-registration')}
+                  >
                     <Plus className="w-6 h-6 mb-1" />
                     Novo Cliente
                   </Button>
