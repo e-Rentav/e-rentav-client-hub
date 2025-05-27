@@ -47,7 +47,7 @@ export const LoginForm = () => {
       <div className="w-full max-w-md space-y-6">
         {/* Logo e branding */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-3xl shadow-lg mb-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 mb-4">
             <img 
               src="/lovable-uploads/75f6e7da-3f6e-4269-b1ea-f48bd08979b2.png" 
               alt="e-Rentav Logo" 
