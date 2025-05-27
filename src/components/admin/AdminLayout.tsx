@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from './AdminSidebar';
 import { Dashboard } from './Dashboard';
 import { ClientsSection } from './ClientsSection';
+import { ClientTypesManager } from './ClientTypesManager';
 import { DocumentsSection } from './DocumentsSection';
 import { NotificationsSection } from './NotificationsSection';
 
@@ -16,6 +17,8 @@ export const AdminLayout = () => {
         return <Dashboard />;
       case 'clients':
         return <ClientsSection />;
+      case 'client-types':
+        return <ClientTypesManager />;
       case 'documents':
         return <DocumentsSection />;
       case 'notifications':

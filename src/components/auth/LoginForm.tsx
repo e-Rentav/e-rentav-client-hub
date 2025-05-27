@@ -39,7 +39,9 @@ export const LoginForm = () => {
   const demoCredentials = [
     { role: 'Administrador', email: 'admin@erentav.com', password: '123456' },
     { role: 'Colaborador', email: 'colaborador@erentav.com', password: '123456' },
-    { role: 'Cliente', email: 'cliente@empresa.com', password: '123456' }
+    { role: 'Cliente PF', email: 'cliente@empresa.com', password: '123456' },
+    { role: 'Escritório AAI', email: 'admin@aaipremium.com', password: '123456' },
+    { role: 'Escritório Contábil', email: 'contato@contabilexcellence.com', password: '123456' }
   ];
 
   return (

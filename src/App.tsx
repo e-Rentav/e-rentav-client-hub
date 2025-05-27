@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { LoginForm } from "./components/auth/LoginForm";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { ClientDashboard } from "./components/client/ClientDashboard";
+import { OfficeDashboard } from "./components/office/OfficeDashboard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -46,6 +47,8 @@ const AppRoutes = () => {
         <ProtectedRoute>
           {user?.role === 'cliente' ? (
             <ClientDashboard />
+          ) : user?.role === 'escritorio' ? (
+            <OfficeDashboard />
           ) : (
             <Navigate to="/admin" replace />
           )}
@@ -61,6 +64,12 @@ const AppRoutes = () => {
       <Route path="/cliente" element={
         <ProtectedRoute allowedRoles={['cliente']}>
           <ClientDashboard />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/escritorio" element={
+        <ProtectedRoute allowedRoles={['escritorio']}>
+          <OfficeDashboard />
         </ProtectedRoute>
       } />
       
