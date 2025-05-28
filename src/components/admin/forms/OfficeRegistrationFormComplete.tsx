@@ -1,20 +1,22 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
-import { User, Phone, Mail, MapPin, Building2, Tag } from 'lucide-react';
+import { Building2, User, Mail, MapPin, FileText } from 'lucide-react';
 
-interface PersonFormData {
-  name: string;
-  cpf: string;
-  email: string;
-  phone: string;
+interface OfficeFormData {
+  companyName: string;
+  cnpj: string;
+  officeType: 'aai' | 'contabilidade';
+  responsibleName: string;
+  responsibleCpf: string;
+  responsibleEmail: string;
+  responsiblePhone: string;
   street: string;
   number: string;
   complement?: string;
@@ -22,8 +24,6 @@ interface PersonFormData {
   city: string;
   state: string;
   cep: string;
-  linkedOfficeId?: string;
-  services: string[];
 }
 
 const brazilianStates = [
@@ -32,44 +32,16 @@ const brazilianStates = [
   'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
-const mockOffices = [
-  { id: '1', name: 'AAI Premium Investimentos', type: 'aai' },
-  { id: '2', name: 'Excellence Contabilidade', type: 'contabilidade' }
-];
+export const OfficeRegistrationFormComplete = () => {
+  const form = useForm<OfficeFormData>();
 
-const availableServices = [
-  { id: 'exterior', name: 'Exterior', description: 'Declaração de bens e investimentos no exterior' },
-  { id: 'brasil', name: 'Brasil', description: 'Declaração de bens e investimentos no Brasil' },
-  { id: 'criptos', name: 'Criptos', description: 'Declaração de criptomoedas e ativos digitais' },
-  { id: 'declaracao-ir', name: 'Declaração de IR', description: 'Declaração completa do Imposto de Renda' }
-];
-
-export const PersonRegistrationForm = () => {
-  const form = useForm<PersonFormData>({
-    defaultValues: {
-      services: []
-    }
-  });
-
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-
-  const onSubmit = (data: PersonFormData) => {
-    const formData = { ...data, services: selectedServices };
-    console.log('Person registration data:', formData);
+  const onSubmit = (data: OfficeFormData) => {
+    console.log('Office registration data:', data);
     toast({
-      title: "Cliente cadastrado com sucesso!",
-      description: "O cliente pessoa física foi registrado no sistema com os serviços selecionados.",
+      title: "Escritório cadastrado com sucesso!",
+      description: "O escritório parceiro foi registrado no sistema.",
     });
     form.reset();
-    setSelectedServices([]);
-  };
-
-  const handleServiceToggle = (serviceId: string) => {
-    setSelectedServices(prev => 
-      prev.includes(serviceId) 
-        ? prev.filter(id => id !== serviceId)
-        : [...prev, serviceId]
-    );
   };
 
   return (
@@ -77,32 +49,32 @@ export const PersonRegistrationForm = () => {
       <Card className="erentav-card">
         <CardHeader>
           <CardTitle className="flex items-center text-erentav-primary">
-            <User className="w-6 h-6 mr-3" />
-            Cadastro de Cliente Pessoa Física
+            <Building2 className="w-6 h-6 mr-3" />
+            Cadastro de Escritório Parceiro
           </CardTitle>
           <CardDescription>
-            Cadastre um novo cliente pessoa física no sistema e-Rentav
+            Cadastre um novo escritório AAI ou de contabilidade no sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {/* Dados Pessoais */}
+              {/* Dados da Empresa */}
               <div className="bg-gray-50 p-6 rounded-lg space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <User className="w-5 h-5 mr-2" />
-                  Dados Pessoais
+                  <Building2 className="w-5 h-5 mr-2" />
+                  Dados da Empresa
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="name"
-                    rules={{ required: 'Nome completo é obrigatório' }}
+                    name="companyName"
+                    rules={{ required: 'Razão social é obrigatória' }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nome Completo</FormLabel>
+                        <FormLabel>Razão Social</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nome completo do cliente" {...field} />
+                          <Input placeholder="Nome completo da empresa" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -110,11 +82,71 @@ export const PersonRegistrationForm = () => {
                   />
                   <FormField
                     control={form.control}
-                    name="cpf"
-                    rules={{ required: 'CPF é obrigatório' }}
+                    name="cnpj"
+                    rules={{ required: 'CNPJ é obrigatório' }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>CPF</FormLabel>
+                        <FormLabel>CNPJ</FormLabel>
+                        <FormControl>
+                          <Input placeholder="00.000.000/0000-00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="officeType"
+                  rules={{ required: 'Tipo de escritório é obrigatório' }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Escritório</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo de escritório" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="aai">Agentes Autônomos de Investimentos (AAI)</SelectItem>
+                          <SelectItem value="contabilidade">Escritório de Contabilidade</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Dados do Responsável */}
+              <div className="bg-blue-50 p-6 rounded-lg space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <User className="w-5 h-5 mr-2" />
+                  Dados do Responsável
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="responsibleName"
+                    rules={{ required: 'Nome do responsável é obrigatório' }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Completo</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome completo do responsável" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="responsibleCpf"
+                    rules={{ required: 'CPF do responsável é obrigatório' }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CPF do Responsável</FormLabel>
                         <FormControl>
                           <Input placeholder="000.000.000-00" {...field} />
                         </FormControl>
@@ -123,20 +155,12 @@ export const PersonRegistrationForm = () => {
                     )}
                   />
                 </div>
-              </div>
-
-              {/* Contato */}
-              <div className="bg-blue-50 p-6 rounded-lg space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Phone className="w-5 h-5 mr-2" />
-                  Informações de Contato
-                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="responsibleEmail"
                     rules={{ 
-                      required: 'E-mail é obrigatório',
+                      required: 'E-mail do responsável é obrigatório',
                       pattern: {
                         value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                         message: 'E-mail inválido'
@@ -144,9 +168,9 @@ export const PersonRegistrationForm = () => {
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>E-mail</FormLabel>
+                        <FormLabel>E-mail do Responsável</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="cliente@email.com" {...field} />
+                          <Input type="email" placeholder="responsavel@email.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -154,11 +178,11 @@ export const PersonRegistrationForm = () => {
                   />
                   <FormField
                     control={form.control}
-                    name="phone"
-                    rules={{ required: 'Telefone é obrigatório' }}
+                    name="responsiblePhone"
+                    rules={{ required: 'Telefone do responsável é obrigatório' }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Telefone</FormLabel>
+                        <FormLabel>Telefone do Responsável</FormLabel>
                         <FormControl>
                           <Input placeholder="(11) 99999-9999" {...field} />
                         </FormControl>
@@ -215,7 +239,7 @@ export const PersonRegistrationForm = () => {
                       <FormItem>
                         <FormLabel>Complemento (opcional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="Apt, Bloco, etc." {...field} />
+                          <Input placeholder="Sala, Andar, etc." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -293,73 +317,12 @@ export const PersonRegistrationForm = () => {
                 </div>
               </div>
 
-              {/* Serviços Contratados */}
-              <div className="bg-purple-50 p-6 rounded-lg space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Tag className="w-5 h-5 mr-2" />
-                  Serviços Contratados
-                </h3>
-                <p className="text-sm text-gray-600">Selecione os serviços que este cliente irá contratar</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {availableServices.map((service) => (
-                    <div key={service.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-white">
-                      <Checkbox
-                        id={service.id}
-                        checked={selectedServices.includes(service.id)}
-                        onCheckedChange={() => handleServiceToggle(service.id)}
-                      />
-                      <div className="flex-1">
-                        <label htmlFor={service.id} className="font-medium text-gray-900 cursor-pointer">
-                          {service.name}
-                        </label>
-                        <p className="text-xs text-gray-600">{service.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Escritório Vinculado */}
-              <div className="bg-orange-50 p-6 rounded-lg space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Building2 className="w-5 h-5 mr-2" />
-                  Vínculo com Escritório (Opcional)
-                </h3>
-                <FormField
-                  control={form.control}
-                  name="linkedOfficeId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Escritório Parceiro</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um escritório ou deixe vazio para cliente direto" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {mockOffices.map((office) => (
-                            <SelectItem key={office.id} value={office.id}>
-                              {office.name} ({office.type === 'aai' ? 'AAI' : 'Contabilidade'})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" onClick={() => {
-                  form.reset();
-                  setSelectedServices([]);
-                }}>
+                <Button type="button" variant="outline" onClick={() => form.reset()}>
                   Cancelar
                 </Button>
                 <Button type="submit" className="erentav-button">
-                  Cadastrar Cliente
+                  Cadastrar Escritório
                 </Button>
               </div>
             </form>

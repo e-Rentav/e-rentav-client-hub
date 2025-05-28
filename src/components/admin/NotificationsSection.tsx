@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { 
   Bell, 
   Send,
@@ -14,7 +15,9 @@ import {
   Mail,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Settings,
+  Zap
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -25,35 +28,74 @@ export const NotificationsSection = () => {
     recipients: 'all'
   });
 
+  const [automatedReminders, setAutomatedReminders] = useState([
+    {
+      id: 1,
+      name: 'Lembrete Mensal - Documentação',
+      description: 'Enviar lembrete automático do dia 1º até o envio dos documentos',
+      active: true,
+      trigger: 'monthly_start',
+      template: 'Não se esqueça de enviar seus documentos do mês atual. Acesse a plataforma e faça o upload.',
+      frequency: 'daily'
+    },
+    {
+      id: 2,
+      name: 'Lembrete de Prazo Final',
+      description: 'Lembrete 3 dias antes do prazo final',
+      active: true,
+      trigger: 'deadline_approach',
+      template: 'Atenção! Restam apenas 3 dias para o envio dos documentos. Não perca o prazo!',
+      frequency: 'once'
+    },
+    {
+      id: 3,
+      name: 'Confirmação de Recebimento',
+      description: 'Confirmar automaticamente o recebimento de documentos',
+      active: true,
+      trigger: 'document_uploaded',
+      template: 'Documentos recebidos com sucesso! Eles estão sendo processados pela nossa equipe.',
+      frequency: 'immediate'
+    },
+    {
+      id: 4,
+      name: 'Documentos Pendentes',
+      description: 'Lembrete semanal para clientes com documentos pendentes',
+      active: false,
+      trigger: 'weekly_pending',
+      template: 'Você ainda possui documentos pendentes. Acesse a plataforma para regularizar sua situação.',
+      frequency: 'weekly'
+    }
+  ]);
+
   const notifications = [
     {
       id: 1,
+      title: 'Lembrete Automático: Documentos Janeiro',
+      message: 'Lembrete automático enviado para clientes sobre documentos de janeiro.',
+      recipients: 'Todos os clientes ativos (142)',
+      sentDate: '01/01/2025',
+      sentBy: 'Sistema Automático',
+      type: 'auto',
+      status: 'Enviado'
+    },
+    {
+      id: 2,
       title: 'Lembrete: Documentos de Dezembro',
       message: 'Por favor, envie os documentos referentes ao mês de dezembro até o dia 10/01.',
       recipients: ['Tech Solutions Ltda', 'StartUp ABC'],
       sentDate: '02/01/2025',
       sentBy: 'Maria Santos',
-      type: 'warning',
-      status: 'Enviado'
-    },
-    {
-      id: 2,
-      title: 'Sistema em Manutenção',
-      message: 'O sistema estará em manutenção no dia 05/01 das 2h às 4h da manhã.',
-      recipients: 'Todos os clientes',
-      sentDate: '30/12/2024',
-      sentBy: 'João Silva',
-      type: 'info',
+      type: 'manual',
       status: 'Enviado'
     },
     {
       id: 3,
-      title: 'Parabéns! Documentos processados',
-      message: 'Seus documentos de novembro foram processados com sucesso.',
-      recipients: ['Inovação Digital'],
-      sentDate: '28/12/2024',
-      sentBy: 'Maria Santos',
-      type: 'success',
+      title: 'Confirmação Automática: Documentos Recebidos',
+      message: 'Documentos recebidos com sucesso! Eles estão sendo processados.',
+      recipients: ['João Silva'],
+      sentDate: '02/01/2025',
+      sentBy: 'Sistema Automático',
+      type: 'auto',
       status: 'Enviado'
     }
   ];
@@ -80,14 +122,26 @@ export const NotificationsSection = () => {
     });
   };
 
+  const toggleAutomatedReminder = (id: number) => {
+    setAutomatedReminders(prev => 
+      prev.map(reminder => 
+        reminder.id === id ? { ...reminder, active: !reminder.active } : reminder
+      )
+    );
+    
+    const reminder = automatedReminders.find(r => r.id === id);
+    toast({
+      title: reminder?.active ? "Lembrete desativado" : "Lembrete ativado",
+      description: `O lembrete "${reminder?.name}" foi ${reminder?.active ? 'desativado' : 'ativado'}.`,
+    });
+  };
+
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'warning':
-        return <AlertTriangle className="w-4 h-4 text-orange-500" />;
-      case 'success':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'info':
-        return <Bell className="w-4 h-4 text-blue-500" />;
+      case 'auto':
+        return <Zap className="w-4 h-4 text-blue-500" />;
+      case 'manual':
+        return <Bell className="w-4 h-4 text-gray-500" />;
       default:
         return <Bell className="w-4 h-4 text-gray-500" />;
     }
@@ -95,17 +149,17 @@ export const NotificationsSection = () => {
 
   const stats = {
     total: notifications.length,
-    enviadas: notifications.filter(n => n.status === 'Enviado').length,
-    pendentes: 0,
-    abertas: notifications.length
+    automaticas: notifications.filter(n => n.type === 'auto').length,
+    manuais: notifications.filter(n => n.type === 'manual').length,
+    ativas: automatedReminders.filter(r => r.active).length
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Notificações</h1>
-        <p className="text-gray-600">Envie notificações e acompanhe o histórico de comunicações</p>
+        <h1 className="text-3xl font-bold text-gray-900">Centro de Notificações</h1>
+        <p className="text-gray-600">Gerencie notificações manuais e lembretes automáticos</p>
       </div>
 
       {/* Stats Cards */}
@@ -114,7 +168,7 @@ export const NotificationsSection = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total</p>
+                <p className="text-sm font-medium text-gray-600">Total Enviadas</p>
                 <p className="text-2xl font-bold text-erentav-primary">{stats.total}</p>
               </div>
               <Bell className="w-8 h-8 text-erentav-primary" />
@@ -126,10 +180,10 @@ export const NotificationsSection = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Enviadas</p>
-                <p className="text-2xl font-bold text-green-600">{stats.enviadas}</p>
+                <p className="text-sm font-medium text-gray-600">Automáticas</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.automaticas}</p>
               </div>
-              <CheckCircle className="w-8 h-8 text-green-600" />
+              <Zap className="w-8 h-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
@@ -138,10 +192,10 @@ export const NotificationsSection = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pendentes</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.pendentes}</p>
+                <p className="text-sm font-medium text-gray-600">Manuais</p>
+                <p className="text-2xl font-bold text-green-600">{stats.manuais}</p>
               </div>
-              <Clock className="w-8 h-8 text-orange-600" />
+              <Send className="w-8 h-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
@@ -150,22 +204,22 @@ export const NotificationsSection = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Taxa de Abertura</p>
-                <p className="text-2xl font-bold text-blue-600">87%</p>
+                <p className="text-sm font-medium text-gray-600">Lembretes Ativos</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.ativas}</p>
               </div>
-              <Mail className="w-8 h-8 text-blue-600" />
+              <Settings className="w-8 h-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Nova Notificação */}
+        {/* Nova Notificação Manual */}
         <Card className="erentav-card">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Plus className="w-5 h-5 mr-2 text-erentav-primary" />
-              Nova Notificação
+              Nova Notificação Manual
             </CardTitle>
             <CardDescription>
               Envie uma notificação personalizada para seus clientes
@@ -215,50 +269,38 @@ export const NotificationsSection = () => {
           </CardContent>
         </Card>
 
-        {/* Notificações Automáticas */}
+        {/* Lembretes Automáticos */}
         <Card className="erentav-card">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Clock className="w-5 h-5 mr-2 text-erentav-primary" />
-              Notificações Automáticas
+              <Zap className="w-5 h-5 mr-2 text-erentav-primary" />
+              Lembretes Automáticos
             </CardTitle>
             <CardDescription>
-              Configure lembretes automáticos baseados em gatilhos
+              Configure lembretes automáticos para envio de documentação
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Lembrete de Upload</h4>
-                <Badge variant="default">Ativo</Badge>
+            {automatedReminders.map((reminder) => (
+              <div key={reminder.id} className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium">{reminder.name}</h4>
+                  <Switch
+                    checked={reminder.active}
+                    onCheckedChange={() => toggleAutomatedReminder(reminder.id)}
+                  />
+                </div>
+                <p className="text-sm text-gray-600 mb-2">
+                  {reminder.description}
+                </p>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Frequência: {reminder.frequency}</span>
+                  <Badge variant={reminder.active ? "default" : "secondary"}>
+                    {reminder.active ? "Ativo" : "Inativo"}
+                  </Badge>
+                </div>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
-                Enviar lembrete se o cliente não fez upload até o dia 10 do mês
-              </p>
-              <Button variant="outline" size="sm">Editar</Button>
-            </div>
-            
-            <div className="p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Confirmação de Recebimento</h4>
-                <Badge variant="default">Ativo</Badge>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">
-                Confirmar automaticamente o recebimento de documentos
-              </p>
-              <Button variant="outline" size="sm">Editar</Button>
-            </div>
-            
-            <div className="p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Vencimento de Plano</h4>
-                <Badge variant="secondary">Inativo</Badge>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">
-                Lembrar sobre vencimento do plano 5 dias antes
-              </p>
-              <Button variant="outline" size="sm">Ativar</Button>
-            </div>
+            ))}
           </CardContent>
         </Card>
       </div>
@@ -268,7 +310,7 @@ export const NotificationsSection = () => {
         <CardHeader>
           <CardTitle>Histórico de Notificações</CardTitle>
           <CardDescription>
-            Todas as notificações enviadas recentemente
+            Todas as notificações enviadas (manuais e automáticas)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -279,10 +321,15 @@ export const NotificationsSection = () => {
                   <div className="flex items-start space-x-3">
                     {getTypeIcon(notification.type)}
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{notification.title}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h4 className="font-medium text-gray-900">{notification.title}</h4>
+                        <Badge variant={notification.type === 'auto' ? 'default' : 'outline'}>
+                          {notification.type === 'auto' ? 'Automática' : 'Manual'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
                       
-                      <div className="mt-3 flex items-center space-x-4 text-xs text-gray-500">
+                      <div className="flex items-center space-x-4 text-xs text-gray-500">
                         <div className="flex items-center">
                           <Calendar className="w-3 h-3 mr-1" />
                           {notification.sentDate}
@@ -301,9 +348,7 @@ export const NotificationsSection = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="default">{notification.status}</Badge>
-                  </div>
+                  <Badge variant="default">{notification.status}</Badge>
                 </div>
               </div>
             ))}
