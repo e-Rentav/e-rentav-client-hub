@@ -1,87 +1,71 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Users, 
-  FileText, 
-  Clock, 
-  CheckCircle,
-  AlertTriangle,
-  TrendingUp,
-  Calendar,
-  DollarSign
-} from 'lucide-react';
-
+import { Users, FileText, Clock, CheckCircle, AlertTriangle, TrendingUp, Calendar, DollarSign } from 'lucide-react';
 export const Dashboard = () => {
-  const kpis = [
-    {
-      title: "Total de Clientes",
-      value: "248",
-      change: "+12%",
-      changeType: "positive" as const,
-      icon: Users,
-      description: "Em relação ao mês passado"
-    },
-    {
-      title: "Documentos Recebidos",
-      value: "1,432",
-      change: "+8%",
-      changeType: "positive" as const,
-      icon: FileText,
-      description: "Este mês"
-    },
-    {
-      title: "Pendências",
-      value: "23",
-      change: "-15%",
-      changeType: "positive" as const,
-      icon: AlertTriangle,
-      description: "Documentos em análise"
-    },
-    {
-      title: "Receita Mensal",
-      value: "R$ 45.2k",
-      change: "+23%",
-      changeType: "positive" as const,
-      icon: DollarSign,
-      description: "Contratos ativos"
-    }
-  ];
-
-  const recentClients = [
-    {
-      name: "Tech Solutions Ltda",
-      email: "contato@techsolutions.com",
-      plan: "Anual",
-      status: "Ativo",
-      lastUpload: "2 dias atrás"
-    },
-    {
-      name: "Inovação Digital",
-      email: "admin@inovacaodigital.com",
-      plan: "Mensal",
-      status: "Pendente",
-      lastUpload: "5 dias atrás"
-    },
-    {
-      name: "StartUp ABC",
-      email: "hello@startupabc.com",
-      plan: "Trimestral",
-      status: "Ativo",
-      lastUpload: "1 dia atrás"
-    }
-  ];
-
-  const planDistribution = [
-    { name: "Mensal", count: 142, percentage: 57 },
-    { name: "Trimestral", count: 68, percentage: 27 },
-    { name: "Anual", count: 38, percentage: 16 }
-  ];
-
-  return (
-    <div className="space-y-6">
+  const kpis = [{
+    title: "Total de Clientes",
+    value: "248",
+    change: "+12%",
+    changeType: "positive" as const,
+    icon: Users,
+    description: "Em relação ao mês passado"
+  }, {
+    title: "Documentos Recebidos",
+    value: "1,432",
+    change: "+8%",
+    changeType: "positive" as const,
+    icon: FileText,
+    description: "Este mês"
+  }, {
+    title: "Pendências",
+    value: "23",
+    change: "-15%",
+    changeType: "positive" as const,
+    icon: AlertTriangle,
+    description: "Documentos em análise"
+  }, {
+    title: "Receita Mensal",
+    value: "R$ 45.2k",
+    change: "+23%",
+    changeType: "positive" as const,
+    icon: DollarSign,
+    description: "Contratos ativos"
+  }];
+  const recentClients = [{
+    name: "Tech Solutions Ltda",
+    email: "contato@techsolutions.com",
+    plan: "Anual",
+    status: "Ativo",
+    lastUpload: "2 dias atrás"
+  }, {
+    name: "Inovação Digital",
+    email: "admin@inovacaodigital.com",
+    plan: "Mensal",
+    status: "Pendente",
+    lastUpload: "5 dias atrás"
+  }, {
+    name: "StartUp ABC",
+    email: "hello@startupabc.com",
+    plan: "Trimestral",
+    status: "Ativo",
+    lastUpload: "1 dia atrás"
+  }];
+  const planDistribution = [{
+    name: "Mensal",
+    count: 142,
+    percentage: 57
+  }, {
+    name: "Trimestral",
+    count: 68,
+    percentage: 27
+  }, {
+    name: "Anual",
+    count: 38,
+    percentage: 16
+  }];
+  return <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -90,8 +74,7 @@ export const Dashboard = () => {
 
       {/* KPIs Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map((kpi, index) => (
-          <Card key={index} className="erentav-card">
+        {kpis.map((kpi, index) => <Card key={index} className="erentav-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
               <kpi.icon className="h-4 w-4 text-erentav-primary" />
@@ -105,8 +88,7 @@ export const Dashboard = () => {
                 {kpi.description}
               </p>
             </CardContent>
-          </Card>
-        ))}
+          </Card>)}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -122,15 +104,13 @@ export const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {planDistribution.map((plan, index) => (
-              <div key={index} className="space-y-2">
+            {planDistribution.map((plan, index) => <div key={index} className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">{plan.name}</span>
                   <span className="text-sm text-gray-600">{plan.count} clientes</span>
                 </div>
                 <Progress value={plan.percentage} className="h-2" />
-              </div>
-            ))}
+              </div>)}
           </CardContent>
         </Card>
 
@@ -147,8 +127,7 @@ export const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentClients.map((client, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {recentClients.map((client, index) => <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex-1">
                     <p className="font-medium text-sm">{client.name}</p>
                     <p className="text-xs text-gray-600">{client.email}</p>
@@ -158,16 +137,12 @@ export const Dashboard = () => {
                     </p>
                   </div>
                   <div className="text-right space-y-1">
-                    <Badge 
-                      variant={client.status === 'Ativo' ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
+                    <Badge variant={client.status === 'Ativo' ? 'default' : 'secondary'} className="text-xs">
                       {client.status}
                     </Badge>
                     <p className="text-xs text-gray-600">{client.plan}</p>
                   </div>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
@@ -186,20 +161,20 @@ export const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
+            <div className="p-4 border border-orange-200 rounded-lg bg-red-600">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-orange-800">Documentos Pendentes</p>
+                  <p className="font-medium text-orange-800">Clientes a fazer</p>
                   <p className="text-2xl font-bold text-orange-900">23</p>
                 </div>
                 <AlertTriangle className="w-8 h-8 text-orange-600" />
               </div>
             </div>
             
-            <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg">
+            <div className="p-4 border border-blue-200 rounded-lg bg-orange-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-blue-800">Novos Uploads</p>
+                  <p className="font-medium text-blue-800">Clientes sem upload</p>
                   <p className="text-2xl font-bold text-blue-900">47</p>
                 </div>
                 <FileText className="w-8 h-8 text-blue-600" />
@@ -218,6 +193,5 @@ export const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
