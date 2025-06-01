@@ -144,7 +144,44 @@ export const OfficeDashboard = () => {
           <p className="text-gray-600">Gerencie seus clientes e acompanhe as atividades do seu escritório</p>
         </div>
 
-        {/* Stats Grid */}
+        {/* Ações Rápidas - movido para cima */}
+        <Card className="erentav-card mb-8">
+          <CardHeader>
+            <CardTitle>Ações Rápidas</CardTitle>
+            <CardDescription>
+              Gerencie seus clientes e documentos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Button 
+                className="erentav-button h-16 flex-col"
+                onClick={() => setCurrentView('client-registration')}
+              >
+                <Plus className="w-6 h-6 mb-1" />
+                Novo Cliente
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-16 flex-col"
+                onClick={() => setCurrentView('collaborator-registration')}
+              >
+                <UserPlus className="w-6 h-6 mb-1" />
+                Cadastrar Colaborador
+              </Button>
+              <Button variant="outline" className="h-16 flex-col">
+                <Upload className="w-6 h-6 mb-1" />
+                Enviar Documentos
+              </Button>
+              <Button variant="outline" className="h-16 flex-col">
+                <Download className="w-6 h-6 mb-1" />
+                Relatórios
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stats Grid - movido para baixo */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="erentav-card">
             <CardContent className="p-4">
@@ -210,43 +247,6 @@ export const OfficeDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Coluna Principal */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Ações Rápidas */}
-            <Card className="erentav-card">
-              <CardHeader>
-                <CardTitle>Ações Rápidas</CardTitle>
-                <CardDescription>
-                  Gerencie seus clientes e documentos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Button 
-                    className="erentav-button h-16 flex-col"
-                    onClick={() => setCurrentView('client-registration')}
-                  >
-                    <Plus className="w-6 h-6 mb-1" />
-                    Novo Cliente
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-16 flex-col"
-                    onClick={() => setCurrentView('collaborator-registration')}
-                  >
-                    <UserPlus className="w-6 h-6 mb-1" />
-                    Cadastrar Colaborador
-                  </Button>
-                  <Button variant="outline" className="h-16 flex-col">
-                    <Upload className="w-6 h-6 mb-1" />
-                    Enviar Documentos
-                  </Button>
-                  <Button variant="outline" className="h-16 flex-col">
-                    <Download className="w-6 h-6 mb-1" />
-                    Relatórios
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Atividade Recente */}
             <Card className="erentav-card">
               <CardHeader>
