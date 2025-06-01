@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { PersonRegistrationForm } from './forms/PersonRegistrationForm';
 import { OfficeRegistrationFormComplete } from './forms/OfficeRegistrationFormComplete';
 import { CollaboratorRegistrationForm } from './forms/CollaboratorRegistrationForm';
+import { AdminCollaboratorRegistration } from './AdminCollaboratorRegistration';
 import { ServicesManager } from './ServicesManager';
-import { User, Building2, UserPlus, ArrowLeft, Tag } from 'lucide-react';
+import { User, Building2, UserPlus, ArrowLeft, Tag, Shield } from 'lucide-react';
 
-type RegistrationType = 'menu' | 'person' | 'office' | 'collaborator' | 'services';
+type RegistrationType = 'menu' | 'person' | 'office' | 'collaborator' | 'admin-collaborator' | 'services';
 
 export const RegistrationSection = () => {
   const [activeForm, setActiveForm] = useState<RegistrationType>('menu');
@@ -21,6 +22,8 @@ export const RegistrationSection = () => {
         return <OfficeRegistrationFormComplete />;
       case 'collaborator':
         return <CollaboratorRegistrationForm />;
+      case 'admin-collaborator':
+        return <AdminCollaboratorRegistration onBack={() => setActiveForm('menu')} />;
       case 'services':
         return <ServicesManager />;
       default:
@@ -36,7 +39,7 @@ export const RegistrationSection = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                   <Card 
                     className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-erentav-primary"
                     onClick={() => setActiveForm('person')}
@@ -75,12 +78,28 @@ export const RegistrationSection = () => {
                   >
                     <CardContent className="p-6 text-center">
                       <UserPlus className="w-16 h-16 mx-auto mb-4 text-purple-600" />
-                      <h3 className="text-lg font-semibold mb-2">Colaborador</h3>
+                      <h3 className="text-lg font-semibold mb-2">Colaborador Escritório</h3>
                       <p className="text-gray-600 text-sm mb-4">
                         Cadastre um colaborador com endereço completo e permissões
                       </p>
                       <Button className="w-full" variant="outline">
                         Cadastrar Colaborador
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <Card 
+                    className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-erentav-primary"
+                    onClick={() => setActiveForm('admin-collaborator')}
+                  >
+                    <CardContent className="p-6 text-center">
+                      <Shield className="w-16 h-16 mx-auto mb-4 text-red-600" />
+                      <h3 className="text-lg font-semibold mb-2">Colaborador Admin</h3>
+                      <p className="text-gray-600 text-sm mb-4">
+                        Cadastre um colaborador administrativo do sistema
+                      </p>
+                      <Button className="w-full" variant="outline">
+                        Cadastrar Admin
                       </Button>
                     </CardContent>
                   </Card>
@@ -110,7 +129,7 @@ export const RegistrationSection = () => {
 
   return (
     <div className="space-y-6">
-      {activeForm !== 'menu' && (
+      {activeForm !== 'menu' && activeForm !== 'admin-collaborator' && (
         <div className="flex items-center space-x-4">
           <Button 
             variant="outline" 
@@ -123,7 +142,7 @@ export const RegistrationSection = () => {
           <h1 className="text-2xl font-bold text-gray-900">
             {activeForm === 'person' && 'Cadastro de Cliente Pessoa Física'}
             {activeForm === 'office' && 'Cadastro de Escritório Parceiro'}
-            {activeForm === 'collaborator' && 'Cadastro de Colaborador'}
+            {activeForm === 'collaborator' && 'Cadastro de Colaborador de Escritório'}
             {activeForm === 'services' && 'Gerenciamento de Serviços'}
           </h1>
         </div>
