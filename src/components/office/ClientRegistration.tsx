@@ -1,9 +1,8 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { ClientRegistrationForm } from './forms/ClientRegistrationForm';
+import { CollaboratorClientRegistrationForm } from './forms/CollaboratorClientRegistrationForm';
 
 interface ClientRegistrationProps {
   onBack: () => void;
@@ -36,7 +35,7 @@ export const ClientRegistration = ({ onBack }: ClientRegistrationProps) => {
                 <h1 className="text-xl font-bold text-erentav-primary">
                   Cadastro de Cliente
                 </h1>
-                <p className="text-sm text-gray-600">Adicione um novo cliente ao seu escritório</p>
+                <p className="text-sm text-gray-600">Adicione um novo cliente</p>
               </div>
             </div>
           </div>
@@ -44,7 +43,10 @@ export const ClientRegistration = ({ onBack }: ClientRegistrationProps) => {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ClientRegistrationForm onSuccess={onBack} />
+        <CollaboratorClientRegistrationForm 
+          onSuccess={onBack} 
+          onCancel={onBack}
+        />
       </div>
     </div>
   );
