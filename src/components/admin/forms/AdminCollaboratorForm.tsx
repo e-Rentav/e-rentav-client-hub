@@ -7,11 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
-import { UserPlus, Mail, Phone, Building, DollarSign, User } from 'lucide-react';
+import { UserPlus, User, Mail, Phone, Building2, DollarSign } from 'lucide-react';
 
 interface AdminCollaboratorFormData {
   name: string;
-  email: string;
+  corporateEmail: string;
   phone: string;
   department: string;
   salary: string;
@@ -21,13 +21,11 @@ const departments = [
   'Recursos Humanos',
   'Tecnologia da Informação',
   'Financeiro',
-  'Comercial/Vendas',
-  'Marketing',
+  'Comercial',
   'Operações',
+  'Marketing',
   'Jurídico',
-  'Atendimento ao Cliente',
-  'Administrativo',
-  'Diretoria'
+  'Atendimento ao Cliente'
 ];
 
 export const AdminCollaboratorForm = () => {
@@ -36,14 +34,14 @@ export const AdminCollaboratorForm = () => {
   const onSubmit = (data: AdminCollaboratorFormData) => {
     console.log('Admin collaborator registration data:', data);
     toast({
-      title: "Colaborador cadastrado com sucesso!",
-      description: "O colaborador foi registrado e receberá credenciais de acesso por e-mail.",
+      title: "Colaborador administrativo cadastrado com sucesso!",
+      description: "O colaborador foi registrado e receberá um convite por e-mail.",
     });
     form.reset();
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto">
       <Card className="erentav-card">
         <CardHeader>
           <CardTitle className="flex items-center text-erentav-primary">
@@ -51,36 +49,44 @@ export const AdminCollaboratorForm = () => {
             Cadastro de Colaborador Administrativo
           </CardTitle>
           <CardDescription>
-            Cadastre um novo colaborador para acesso ao sistema administrativo
+            Cadastre um novo colaborador com acesso ao sistema administrativo
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Dados Pessoais */}
-              <div className="bg-blue-50 p-6 rounded-lg space-y-4">
+              <div className="bg-gray-50 p-6 rounded-lg space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                   <User className="w-5 h-5 mr-2" />
-                  Informações Pessoais
+                  Dados Pessoais
+                </h3>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  rules={{ required: 'Nome completo é obrigatório' }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome Completo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome completo do colaborador" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Informações Corporativas */}
+              <div className="bg-blue-50 p-6 rounded-lg space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <Mail className="w-5 h-5 mr-2" />
+                  Informações Corporativas
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="name"
-                    rules={{ required: 'Nome completo é obrigatório' }}
-                    render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                        <FormLabel>Nome Completo</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome completo do colaborador" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
+                    name="corporateEmail"
                     rules={{ 
                       required: 'E-mail corporativo é obrigatório',
                       pattern: {
@@ -92,15 +98,7 @@ export const AdminCollaboratorForm = () => {
                       <FormItem>
                         <FormLabel>E-mail Corporativo</FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <Input 
-                              type="email" 
-                              placeholder="colaborador@erentav.com" 
-                              className="pl-10"
-                              {...field} 
-                            />
-                          </div>
+                          <Input type="email" placeholder="colaborador@empresa.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -114,14 +112,7 @@ export const AdminCollaboratorForm = () => {
                       <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <Input 
-                              placeholder="(11) 99999-9999" 
-                              className="pl-10"
-                              {...field} 
-                            />
-                          </div>
+                          <Input placeholder="(11) 99999-9999" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -130,10 +121,10 @@ export const AdminCollaboratorForm = () => {
                 </div>
               </div>
 
-              {/* Dados Profissionais */}
+              {/* Informações Profissionais */}
               <div className="bg-green-50 p-6 rounded-lg space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Building className="w-5 h-5 mr-2" />
+                  <Building2 className="w-5 h-5 mr-2" />
                   Informações Profissionais
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -143,7 +134,7 @@ export const AdminCollaboratorForm = () => {
                     rules={{ required: 'Setor é obrigatório' }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Setor</FormLabel>
+                        <FormLabel>Setor que Trabalha</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -170,14 +161,10 @@ export const AdminCollaboratorForm = () => {
                       <FormItem>
                         <FormLabel>Salário</FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <Input 
-                              placeholder="R$ 0,00" 
-                              className="pl-10"
-                              {...field} 
-                            />
-                          </div>
+                          <Input 
+                            placeholder="R$ 0,00" 
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
