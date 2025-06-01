@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { ClientRegistration } from './ClientRegistration';
+import { CollaboratorRegistration } from './CollaboratorRegistration';
 import { 
   Upload, 
   FileText, 
@@ -18,14 +18,15 @@ import {
   LogOut,
   Plus,
   BarChart3,
-  Download
+  Download,
+  UserPlus
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 export const OfficeDashboard = () => {
   const { user, logout } = useAuth();
   const [uploading, setUploading] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'client-registration'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'client-registration' | 'collaborator-registration'>('dashboard');
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -93,6 +94,10 @@ export const OfficeDashboard = () => {
 
   if (currentView === 'client-registration') {
     return <ClientRegistration onBack={() => setCurrentView('dashboard')} />;
+  }
+
+  if (currentView === 'collaborator-registration') {
+    return <CollaboratorRegistration onBack={() => setCurrentView('dashboard')} />;
   }
 
   return (
@@ -214,13 +219,21 @@ export const OfficeDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <Button 
                     className="erentav-button h-16 flex-col"
                     onClick={() => setCurrentView('client-registration')}
                   >
                     <Plus className="w-6 h-6 mb-1" />
                     Novo Cliente
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-16 flex-col"
+                    onClick={() => setCurrentView('collaborator-registration')}
+                  >
+                    <UserPlus className="w-6 h-6 mb-1" />
+                    Cadastrar Colaborador
                   </Button>
                   <Button variant="outline" className="h-16 flex-col">
                     <Upload className="w-6 h-6 mb-1" />
