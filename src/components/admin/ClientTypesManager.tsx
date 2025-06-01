@@ -44,7 +44,7 @@ export const ClientTypesManager = () => {
       type: 'pessoa_fisica',
       company: 'Tech Solutions Ltda',
       plan: 'Anual',
-      status: 'Ativo',
+      status: 'ativo',
       documentsUploaded: 45,
       joinDate: '15/03/2024'
     },
@@ -56,7 +56,7 @@ export const ClientTypesManager = () => {
       company: 'AAI Premium Investimentos',
       cnpj: '12.345.678/0001-90',
       plan: 'Profissional',
-      status: 'Ativo',
+      status: 'ativo',
       documentsUploaded: 234,
       joinDate: '08/01/2024',
       clientsCount: 45,
@@ -72,7 +72,7 @@ export const ClientTypesManager = () => {
       company: 'Excellence Contabilidade',
       cnpj: '98.765.432/0001-12',
       plan: 'Empresarial',
-      status: 'Ativo',
+      status: 'ativo',
       documentsUploaded: 567,
       joinDate: '22/11/2023',
       clientsCount: 78,
@@ -274,10 +274,10 @@ export const ClientTypesManager = () => {
                             {typeInfo.label}
                           </Badge>
                           <Badge 
-                            variant={client.status === 'Ativo' ? 'default' : 'secondary'}
+                            variant={client.status === 'ativo' ? 'default' : 'secondary'}
                             className="text-xs"
                           >
-                            {client.status}
+                            {client.status === 'ativo' ? 'Ativo' : client.status === 'inativo' ? 'Inativo' : 'Pendente'}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
                             {client.plan}

@@ -83,22 +83,43 @@ export const useRecentActivity = () => {
   return useQuery({
     queryKey: ['recent-activity'],
     queryFn: async () => {
+      // Fetch activities with user information
       const { data: activities } = await supabase
         .from('activities')
-        .select(`
-          *,
-          profiles!activities_user_id_fkey(name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(10);
 
-      return activities?.map(activity => ({
-        id: activity.id,
-        user: activity.profiles?.name || 'Sistema',
-        action: activity.action,
-        description: activity.description || '',
-        time: new Date(activity.created_at).toLocaleString('pt-BR')
-      })) || [];
+      if (!activities) return [];
+
+      // For each activity, fetch the user profile if user_id exists
+      const activitiesWithUsers = await Promise.all(
+        activities.map(async (activity) => {
+          let userName = 'Sistema';
+          
+          if (activity.user_id) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', activity.user_id)
+              .single();
+            
+            if (profile?.name) {
+              userName = profile.name;
+            }
+          }
+
+          return {
+            id: activity.id,
+            user: userName,
+            action: activity.action,
+            description: activity.description || '',
+            time: new Date(activity.created_at).toLocaleString('pt-BR')
+          };
+        })
+      );
+
+      return activitiesWithUsers;
     }
   });
 };
