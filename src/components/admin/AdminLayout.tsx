@@ -19,14 +19,14 @@ export const AdminLayout = () => {
         return <Dashboard />;
       case 'clients':
         return <ClientsSection />;
+      case 'registrations':
+        return <RegistrationSection />;
       case 'client-types':
         return <ClientTypesManager />;
       case 'documents':
         return <DocumentsSection />;
       case 'notifications':
         return <NotificationsSection />;
-      case 'registrations':
-        return <RegistrationSection />;
       case 'services':
         return <ServicesManager />;
       case 'contracts':

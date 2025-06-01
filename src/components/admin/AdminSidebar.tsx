@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Sidebar,
@@ -20,7 +19,8 @@ import {
   Settings, 
   LogOut,
   CreditCard,
-  BarChart3
+  BarChart3,
+  UserPlus
 } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -44,6 +44,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
       title: "Clientes",
       icon: Users,
       id: "clients"
+    },
+    {
+      title: "Cadastros",
+      icon: UserPlus,
+      id: "registrations"
     },
     {
       title: "Documentos",
