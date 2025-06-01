@@ -3,21 +3,32 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp } from 'lucide-react';
+import { usePlanDistribution } from '@/hooks/useDashboardData';
 
 export const PlanDistribution = () => {
-  const planDistribution = [{
-    name: "Mensal",
-    count: 142,
-    percentage: 57
-  }, {
-    name: "Trimestral",
-    count: 68,
-    percentage: 27
-  }, {
-    name: "Anual",
-    count: 38,
-    percentage: 16
-  }];
+  const { data: planDistribution, isLoading } = usePlanDistribution();
+
+  if (isLoading) {
+    return (
+      <Card className="erentav-card animate-pulse">
+        <CardHeader>
+          <div className="h-6 bg-gray-200 rounded w-48"></div>
+          <div className="h-4 bg-gray-200 rounded w-64"></div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-2">
+              <div className="flex justify-between items-center">
+                <div className="h-4 bg-gray-200 rounded w-16"></div>
+                <div className="h-4 bg-gray-200 rounded w-20"></div>
+              </div>
+              <div className="h-2 bg-gray-200 rounded w-full"></div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="erentav-card">
@@ -31,7 +42,7 @@ export const PlanDistribution = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {planDistribution.map((plan, index) => (
+        {planDistribution?.map((plan, index) => (
           <div key={index} className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">{plan.name}</span>
