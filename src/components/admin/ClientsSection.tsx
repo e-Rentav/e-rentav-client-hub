@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,9 +21,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AdminClientRegistration } from './AdminClientRegistration';
 
 export const ClientsSection = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showClientRegistration, setShowClientRegistration] = useState(false);
 
   const clients = [
     {
@@ -74,6 +75,12 @@ export const ClientsSection = () => {
     client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (showClientRegistration) {
+    return (
+      <AdminClientRegistration onBack={() => setShowClientRegistration(false)} />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -82,7 +89,10 @@ export const ClientsSection = () => {
           <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
           <p className="text-gray-600">Gerencie e acompanhe seus clientes</p>
         </div>
-        <Button className="erentav-button">
+        <Button 
+          className="erentav-button"
+          onClick={() => setShowClientRegistration(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Novo Cliente
         </Button>
