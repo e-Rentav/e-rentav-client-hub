@@ -6,11 +6,16 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock } from 'lucide-react';
+import { Loader2, Mail, Lock, UserPlus, Key } from 'lucide-react';
+import { SignupForm } from './SignupForm';
+import { ForgotPasswordForm } from './ForgotPasswordForm';
+
+type AuthMode = 'login' | 'signup' | 'forgot-password';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
   const { login, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +48,24 @@ export const LoginForm = () => {
     { role: 'Escritório AAI', email: 'admin@aaipremium.com', password: '123456' },
     { role: 'Escritório Contábil', email: 'contato@contabilexcellence.com', password: '123456' }
   ];
+
+  if (authMode === 'signup') {
+    return (
+      <SignupForm 
+        onBackToLogin={() => setAuthMode('login')}
+        onSwitchToForgotPassword={() => setAuthMode('forgot-password')}
+      />
+    );
+  }
+
+  if (authMode === 'forgot-password') {
+    return (
+      <ForgotPasswordForm 
+        onBackToLogin={() => setAuthMode('login')}
+        onSwitchToSignup={() => setAuthMode('signup')}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-erentav-gradient p-4">
@@ -117,6 +140,31 @@ export const LoginForm = () => {
                 )}
               </Button>
             </form>
+
+            {/* Links para outras ações */}
+            <div className="mt-6 space-y-2">
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setAuthMode('signup')}
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Criar Conta
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  onClick={() => setAuthMode('forgot-password')}
+                  className="w-full text-sm"
+                  disabled={isLoading}
+                >
+                  <Key className="mr-2 h-4 w-4" />
+                  Esqueci minha senha
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
