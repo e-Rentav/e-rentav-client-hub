@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,14 +26,19 @@ export const LoginForm = () => {
     setError('');
     setIsLoading(true);
 
+    console.log('Iniciando processo de login...');
+
     try {
       const success = await login(email, password);
       if (!success) {
         setError('Credenciais inválidas. Verifique seu email e senha.');
+        console.log('Login falhou - credenciais inválidas');
+      } else {
+        console.log('Login bem-sucedido, redirecionando...');
       }
     } catch (err) {
       setError('Erro ao fazer login. Tente novamente.');
-      console.error('Login error:', err);
+      console.error('Erro no login:', err);
     } finally {
       setIsLoading(false);
     }
