@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Building2, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Building2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { SignupForm } from './SignupForm';
@@ -15,32 +15,58 @@ export const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   
   const { login } = useAuth();
 
+  const validateForm = (): boolean => {
+    if (!email.trim()) {
+      setError('Email é obrigatório.');
+      return false;
+    }
+    
+    if (!email.includes('@') || !email.includes('.')) {
+      setError('Digite um email válido.');
+      return false;
+    }
+    
+    if (!password) {
+      setError('Senha é obrigatória.');
+      return false;
+    }
+    
+    if (password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres.');
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
 
-    console.log('Iniciando processo de login...');
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    console.log('🚀 Iniciando processo de login...');
 
     try {
-      const success = await login(email, password);
-      if (!success) {
-        setError('Credenciais inválidas. Verifique seu email e senha.');
-        console.log('Login falhou - credenciais inválidas');
-      } else {
-        console.log('Login bem-sucedido, redirecionando...');
+      const result = await login(email, password);
+      
+      if (!result.success) {
+        setError(result.error || 'Falha no login. Tente novamente.');
       }
     } catch (err) {
-      setError('Erro ao fazer login. Tente novamente.');
-      console.error('Erro no login:', err);
+      console.error('❌ Erro no formulário de login:', err);
+      setError('Erro inesperado. Verifique sua conexão e tente novamente.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -62,7 +88,7 @@ export const LoginForm = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-erentav-primary to-erentav-secondary p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="space-y-1 text-center">
           <div className="flex items-center justify-center mb-4">
             <Building2 className="h-12 w-12 text-erentav-primary" />
@@ -83,29 +109,37 @@ export const LoginForm = () => {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError('');
+                }}
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
+                className="transition-all duration-200"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password">Senha *</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Digite sua senha"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError('');
+                  }}
                   required
-                  disabled={isLoading}
+                  disabled={isSubmitting}
+                  className="pr-10 transition-all duration-200"
                 />
                 <Button
                   type="button"
@@ -113,7 +147,7 @@ export const LoginForm = () => {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -128,19 +162,26 @@ export const LoginForm = () => {
           <CardFooter className="flex flex-col space-y-4">
             <Button 
               type="submit" 
-              className="w-full bg-erentav-primary hover:bg-erentav-primary/90"
-              disabled={isLoading}
+              className="w-full bg-erentav-primary hover:bg-erentav-primary/90 transition-all duration-200"
+              disabled={isSubmitting}
             >
-              {isLoading ? 'Entrando...' : 'Entrar'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                'Entrar'
+              )}
             </Button>
             
             <div className="flex flex-col space-y-2 w-full">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full transition-all duration-200"
                 onClick={() => setShowSignup(true)}
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
                 Criar nova conta
               </Button>
@@ -148,9 +189,9 @@ export const LoginForm = () => {
               <Button
                 type="button"
                 variant="link"
-                className="w-full text-sm text-muted-foreground"
+                className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => setShowForgotPassword(true)}
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
                 Esqueci minha senha
               </Button>

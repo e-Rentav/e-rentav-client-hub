@@ -3,175 +3,156 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from '@/hooks/use-toast';
-import { Loader2, Mail, ArrowLeft, Key, UserPlus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle, Building2, ArrowLeft, Mail, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ForgotPasswordFormProps {
   onBackToLogin: () => void;
   onSwitchToSignup: () => void;
 }
 
-export const ForgotPasswordForm = ({ onBackToLogin, onSwitchToSignup }: ForgotPasswordFormProps) => {
+export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ 
+  onBackToLogin, 
+  onSwitchToSignup 
+}) => {
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { resetPassword } = useAuth();
+
+  const validateEmail = (email: string): boolean => {
+    return email.includes('@') && email.includes('.') && email.trim().length > 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email) {
-      toast({
-        title: "Email obrigatório",
-        description: "Por favor, digite seu email.",
-        variant: "destructive"
-      });
+    setError('');
+    setSuccess('');
+
+    if (!email.trim()) {
+      setError('Email é obrigatório.');
       return;
     }
 
-    setIsLoading(true);
+    if (!validateEmail(email)) {
+      setError('Digite um email válido.');
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
-      });
-
-      if (error) {
-        console.error('Reset password error:', error);
-        toast({
-          title: "Erro ao enviar email",
-          description: error.message || "Ocorreu um erro ao enviar o email de recuperação.",
-          variant: "destructive"
-        });
-        return;
+      const result = await resetPassword(email.trim());
+      
+      if (result.success) {
+        setSuccess('Email de recuperação enviado! Verifique sua caixa de entrada e spam.');
+        setEmail('');
+      } else {
+        setError(result.error || 'Erro ao enviar email de recuperação.');
       }
-
-      setEmailSent(true);
-      toast({
-        title: "Email enviado!",
-        description: "Verifique sua caixa de entrada para recuperar sua senha.",
-        variant: "default"
-      });
-    } catch (error) {
-      console.error('Reset password error:', error);
-      toast({
-        title: "Erro inesperado",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        variant: "destructive"
-      });
+    } catch (err) {
+      console.error('❌ Erro na recuperação de senha:', err);
+      setError('Erro inesperado. Tente novamente.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-erentav-gradient p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Logo e branding */}
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 mb-4">
-            <img 
-              src="/lovable-uploads/75f6e7da-3f6e-4269-b1ea-f48bd08979b2.png" 
-              alt="e-Rentav Logo" 
-              className="w-16 h-16 object-contain"
-            />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-erentav-primary to-erentav-secondary p-4">
+      <Card className="w-full max-w-md shadow-2xl">
+        <CardHeader className="space-y-1 text-center">
+          <div className="flex items-center justify-center mb-4">
+            <Building2 className="h-12 w-12 text-erentav-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">e-Rentav</h1>
-          <p className="text-white/80">Recuperar Senha</p>
-        </div>
-
-        {/* Formulário de recuperação de senha */}
-        <Card className="erentav-card">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">
-              {emailSent ? 'Email Enviado!' : 'Esqueci minha Senha'}
-            </CardTitle>
-            <CardDescription className="text-center">
-              {emailSent 
-                ? 'Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.'
-                : 'Digite seu email para receber as instruções de recuperação de senha.'
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!emailSent ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full erentav-button"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <Key className="mr-2 h-4 w-4" />
-                      Enviar Email de Recuperação
-                    </>
-                  )}
-                </Button>
-              </form>
-            ) : (
-              <div className="space-y-4 text-center">
-                <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                  <Mail className="w-8 h-8 text-green-600" />
-                </div>
-                <p className="text-sm text-gray-600">
-                  Um email com as instruções foi enviado para <strong>{email}</strong>
-                </p>
-                <p className="text-xs text-gray-500">
-                  Não esqueça de verificar sua pasta de spam.
-                </p>
-              </div>
+          <CardTitle className="text-2xl font-bold">Recuperar Senha</CardTitle>
+          <CardDescription>
+            Digite seu email para receber as instruções de recuperação
+          </CardDescription>
+        </CardHeader>
+        
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
-
-            {/* Links para outras ações */}
-            <div className="mt-6 space-y-2">
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant="outline"
-                  onClick={onBackToLogin}
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Voltar ao Login
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  onClick={onSwitchToSignup}
-                  className="w-full text-sm"
-                  disabled={isLoading}
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Criar nova conta
-                </Button>
-              </div>
+            
+            {success && (
+              <Alert className="border-green-200 bg-green-50">
+                <Mail className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-700">{success}</AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError('');
+                }}
+                required
+                disabled={isSubmitting}
+                className="transition-all duration-200"
+              />
             </div>
           </CardContent>
-        </Card>
-      </div>
+          
+          <CardFooter className="flex flex-col space-y-4">
+            <Button 
+              type="submit" 
+              className="w-full bg-erentav-primary hover:bg-erentav-primary/90 transition-all duration-200"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Enviar Email de Recuperação
+                </>
+              )}
+            </Button>
+            
+            <div className="flex flex-col space-y-2 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full transition-all duration-200"
+                onClick={onBackToLogin}
+                disabled={isSubmitting}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar para Login
+              </Button>
+              
+              <Button
+                type="button"
+                variant="link"
+                className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
+                onClick={onSwitchToSignup}
+                disabled={isSubmitting}
+              >
+                Não tem conta? Criar nova conta
+              </Button>
+            </div>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 };

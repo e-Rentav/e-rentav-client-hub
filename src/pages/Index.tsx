@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { ClientDashboard } from '@/components/client/ClientDashboard';
 import { Navigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { user, isLoading } = useAuth();
@@ -11,8 +12,8 @@ const Index = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-erentav-primary to-erentav-secondary">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-lg">Carregando...</p>
+          <Loader2 className="h-12 w-12 animate-spin text-white mx-auto mb-4" />
+          <p className="text-white text-lg">Carregando sistema...</p>
         </div>
       </div>
     );
@@ -23,10 +24,16 @@ const Index = () => {
   }
 
   // Redirecionar baseado no role do usuário
-  if (user.role === 'cliente') {
-    return <ClientDashboard />;
-  } else {
-    return <Navigate to="/admin" replace />;
+  switch (user.role) {
+    case 'cliente':
+      return <ClientDashboard />;
+    case 'escritorio':
+      return <Navigate to="/escritorio" replace />;
+    case 'admin':
+    case 'colaborador':
+      return <Navigate to="/admin" replace />;
+    default:
+      return <ClientDashboard />;
   }
 };
 

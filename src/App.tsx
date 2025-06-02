@@ -3,8 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { LoginForm } from "./components/auth/LoginForm";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { ClientDashboard } from "./components/client/ClientDashboard";
@@ -12,80 +13,76 @@ import { OfficeDashboard } from "./components/office/OfficeDashboard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
-
-const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-erentav-primary"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginForm />;
-  }
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-const AppRoutes = () => {
-  const { user } = useAuth();
-
-  return (
-    <Routes>
-      <Route path="/login" element={!user ? <LoginForm /> : <Navigate to="/" replace />} />
-      
-      <Route path="/" element={
-        <ProtectedRoute>
-          {user?.role === 'cliente' ? (
-            <ClientDashboard />
-          ) : user?.role === 'escritorio' ? (
-            <OfficeDashboard />
-          ) : (
-            <Navigate to="/admin" replace />
-          )}
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/admin/*" element={
-        <ProtectedRoute allowedRoles={['admin', 'colaborador']}>
-          <AdminLayout />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/cliente" element={
-        <ProtectedRoute allowedRoles={['cliente']}>
-          <ClientDashboard />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/escritorio" element={
-        <ProtectedRoute allowedRoles={['escritorio']}>
-          <OfficeDashboard />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
-};
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutos
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner />
+      <Sonner position="top-right" />
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <Routes>
+            {/* Rota de login */}
+            <Route 
+              path="/login" 
+              element={
+                <ProtectedRoute requireAuth={false}>
+                  <LoginForm />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Rota principal */}
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Rotas administrativas */}
+            <Route 
+              path="/admin/*" 
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'colaborador']}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Rota de cliente */}
+            <Route 
+              path="/cliente" 
+              element={
+                <ProtectedRoute allowedRoles={['cliente']}>
+                  <ClientDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Rota de escritório */}
+            <Route 
+              path="/escritorio" 
+              element={
+                <ProtectedRoute allowedRoles={['escritorio']}>
+                  <OfficeDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Rota 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
