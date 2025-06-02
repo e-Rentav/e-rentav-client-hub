@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +43,15 @@ export const LoginForm = () => {
   }
 
   if (showForgotPassword) {
-    return <ForgotPasswordForm onBackToLogin={() => setShowForgotPassword(false)} />;
+    return (
+      <ForgotPasswordForm 
+        onBackToLogin={() => setShowForgotPassword(false)} 
+        onSwitchToSignup={() => {
+          setShowForgotPassword(false);
+          setShowSignup(true);
+        }}
+      />
+    );
   }
 
   return (
