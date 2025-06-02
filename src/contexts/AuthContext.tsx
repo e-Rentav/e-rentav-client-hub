@@ -3,67 +3,18 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
-
-export type UserRole = 'admin' | 'colaborador' | 'cliente' | 'escritorio';
-export type ClientType = 'pessoa_fisica' | 'escritorio_aai' | 'escritorio_contabilidade';
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  avatar?: string;
-  status: 'ativo' | 'pendente' | 'inativo';
-  company?: string;
-  plan?: string;
-  clientType?: ClientType;
-  cnpj?: string;
-  responsavel?: string;
-  telefone?: string;
-  logo?: string;
-  parentOfficeId?: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => Promise<void>;
-  signUp: (email: string, password: string, name: string, role?: UserRole) => Promise<{ success: boolean; error?: string }>;
-  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
-  updatePassword: (password: string) => Promise<{ success: boolean; error?: string }>;
-  updateProfile: (updates: Partial<User>) => Promise<{ success: boolean; error?: string }>;
-}
+import { User, UserRole, AuthContextType } from '@/types/auth';
+import { 
+  processAuthUser, 
+  loginUser, 
+  signUpUser, 
+  resetUserPassword, 
+  updateUserPassword, 
+  updateUserProfile, 
+  logoutUser 
+} from '@/services/authService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const retryWithBackoff = async <T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000
-): Promise<T> => {
-  let lastError: any;
-  
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error: any) {
-      lastError = error;
-      console.error(`❌ Tentativa ${attempt + 1}/${maxRetries} falhou:`, error);
-      
-      if (attempt === maxRetries - 1) break;
-      
-      const waitTime = baseDelay * Math.pow(2, attempt);
-      console.log(`⏳ Aguardando ${waitTime}ms antes da próxima tentativa...`);
-      await delay(waitTime);
-    }
-  }
-  
-  throw lastError;
-};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -77,22 +28,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         console.log('🔄 Inicializando autenticação...');
 
-        const currentSession = await retryWithBackoff(async () => {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
-          if (error) {
-            console.error('❌ Erro ao obter sessão:', error);
-            throw error;
-          }
-          
-          return session;
-        });
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Erro ao obter sessão:', error);
+          return;
+        }
 
-        console.log('📋 Sessão atual:', currentSession?.user?.email || 'Nenhuma sessão');
+        console.log('📋 Sessão atual:', session?.user?.email || 'Nenhuma sessão');
 
-        if (currentSession?.user && mounted) {
-          setSession(currentSession);
-          await processAuthUser(currentSession.user);
+        if (session?.user && mounted) {
+          setSession(session);
+          const userData = await processAuthUser(session.user);
+          setUser(userData);
         }
       } catch (error) {
         console.error('❌ Erro crítico na inicialização:', error);
@@ -110,14 +58,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (event === 'SIGNED_IN' && currentSession?.user) {
         setSession(currentSession);
-        await processAuthUser(currentSession.user);
+        const userData = await processAuthUser(currentSession.user);
+        setUser(userData);
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setUser(null);
       } else if (event === 'TOKEN_REFRESHED' && currentSession) {
         setSession(currentSession);
         if (currentSession.user) {
-          await processAuthUser(currentSession.user);
+          const userData = await processAuthUser(currentSession.user);
+          setUser(userData);
         }
       }
     });
@@ -130,141 +80,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const processAuthUser = async (authUser: SupabaseUser) => {
-    try {
-      console.log('👤 Processando usuário autenticado:', authUser.email);
-      console.log('🔍 User metadata:', authUser.user_metadata);
-      
-      const roleFromMetadata = authUser.user_metadata?.role as UserRole;
-      const defaultRole: UserRole = 'cliente';
-      
-      console.log('📝 Role do metadata:', roleFromMetadata);
-      
-      const profile = await fetchUserProfile(authUser);
-      
-      const finalRole = roleFromMetadata || profile?.role || defaultRole;
-      
-      console.log('✅ Role final determinada:', finalRole);
-      
-      const userData: User = {
-        id: authUser.id,
-        name: profile?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
-        email: authUser.email!,
-        role: finalRole,
-        status: profile?.status || 'ativo',
-        avatar: profile?.avatar || authUser.user_metadata?.avatar || undefined,
-        company: profile?.company,
-        plan: profile?.plan,
-        clientType: profile?.clientType,
-        cnpj: profile?.cnpj,
-        responsavel: profile?.responsavel,
-        telefone: profile?.telefone,
-        logo: profile?.logo,
-        parentOfficeId: profile?.parentOfficeId
-      };
-      
-      console.log('👤 Objeto User final:', userData);
-      setUser(userData);
-      
-    } catch (error) {
-      console.error('❌ Erro ao processar usuário:', error);
-      toast.error('Erro ao carregar dados do usuário');
-    }
-  };
-
-  const fetchUserProfile = async (authUser: SupabaseUser) => {
-    try {
-      console.log('👤 Buscando perfil para:', authUser.email);
-      
-      const profile = await retryWithBackoff(async () => {
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
-
-        if (error) {
-          if (error.code === 'PGRST116') {
-            console.log('🔨 Criando novo perfil...');
-            const metaData = authUser.user_metadata || {};
-            
-            const newProfile = {
-              id: authUser.id,
-              name: metaData.name || authUser.email?.split('@')[0] || 'Usuário',
-              email: authUser.email!,
-              role: (metaData.role as UserRole) || 'cliente',
-              status: 'ativo' as const
-            };
-
-            const { data: createdProfile, error: createError } = await supabase
-              .from('profiles')
-              .insert(newProfile)
-              .select()
-              .single();
-              
-            if (createError) {
-              console.error('❌ Erro ao criar perfil:', createError);
-              throw createError;
-            }
-            
-            return createdProfile;
-          } else {
-            console.error('❌ Erro ao buscar perfil:', error);
-            throw error;
-          }
-        }
-        
-        return profileData;
-      });
-
-      if (profile) {
-        console.log('✅ Perfil encontrado/criado:', profile);
-        return profile;
-      } else {
-        console.error('❌ Falha ao obter/criar perfil');
-        return null;
-      }
-    } catch (error) {
-      console.error('❌ Erro inesperado ao buscar perfil:', error);
-      return null;
-    }
-  };
-
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
     try {
-      console.log('🔑 Tentando login para:', email);
-      
-      const result = await retryWithBackoff(async () => {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password
-        });
-
-        if (error) {
-          console.error('❌ Erro de login:', error);
-          
-          let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
-          
-          if (error.message.includes('Invalid login credentials')) {
-            errorMessage = 'Email ou senha incorretos.';
-          } else if (error.message.includes('Email not confirmed')) {
-            errorMessage = 'Por favor, confirme seu email antes de fazer login.';
-          } else if (error.message.includes('Too many requests')) {
-            errorMessage = 'Muitas tentativas de login. Tente novamente em alguns minutos.';
-          } else if (error.message.includes('Database error') || 
-                     error.message.includes('unexpected_failure') ||
-                     error.message.includes('email_change')) {
-            errorMessage = 'Problema temporário no servidor. Tentando novamente...';
-            throw error;
-          }
-          
-          throw new Error(errorMessage);
-        }
-
-        return data;
-      });
+      const result = await loginUser(email, password);
 
       if (result?.user) {
         console.log('✅ Login bem-sucedido para:', result.user.email);
@@ -289,19 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, name: string, role: UserRole = 'cliente'): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('📝 Registrando usuário:', { email, name, role });
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            name: name.trim(),
-            role
-          },
-          emailRedirectTo: `${window.location.origin}/`
-        }
-      });
+      const { data, error } = await signUpUser(email, password, name, role);
 
       if (error) {
         console.error('❌ Erro no cadastro:', error);
@@ -334,11 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('🔄 Enviando email de recuperação para:', email);
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
-      });
+      const { error } = await resetUserPassword(email);
 
       if (error) {
         console.error('❌ Erro na recuperação:', error);
@@ -360,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updatePassword = async (password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase.auth.updateUser({ password });
+      const { error } = await updateUserPassword(password);
 
       if (error) {
         console.error('❌ Erro ao atualizar senha:', error);
@@ -384,10 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
+      const { error } = await updateUserProfile(user.id, updates);
 
       if (error) {
         console.error('❌ Erro ao atualizar perfil:', error);
@@ -408,8 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async (): Promise<void> => {
     try {
-      console.log('👋 Fazendo logout...');
-      const { error } = await supabase.auth.signOut();
+      const { error } = await logoutUser();
       
       if (error) {
         console.error('❌ Erro no logout:', error);
