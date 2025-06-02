@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (currentSession?.user && mounted) {
           setSession(currentSession);
-          await fetchUserProfile(currentSession.user);
+          await processAuthUser(currentSession.user);
         }
       } catch (error) {
         console.error('❌ Erro inesperado na inicialização:', error);
@@ -101,12 +101,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (event === 'SIGNED_IN' && currentSession?.user) {
         setSession(currentSession);
-        await fetchUserProfile(currentSession.user);
+        await processAuthUser(currentSession.user);
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setUser(null);
       } else if (event === 'TOKEN_REFRESHED' && currentSession) {
         setSession(currentSession);
+        // Re-process user to ensure role is still correct
+        if (currentSession.user) {
+          await processAuthUser(currentSession.user);
+        }
       }
     });
 
@@ -117,6 +121,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
+  const processAuthUser = async (authUser: SupabaseUser) => {
+    try {
+      console.log('👤 Processando usuário autenticado:', authUser.email);
+      console.log('🔍 User metadata:', authUser.user_metadata);
+      
+      // Extrair role do user_metadata com fallback
+      const roleFromMetadata = authUser.user_metadata?.role as UserRole;
+      const defaultRole: UserRole = 'cliente';
+      
+      console.log('📝 Role do metadata:', roleFromMetadata);
+      
+      // Tentar buscar perfil no banco de dados
+      const profile = await fetchUserProfile(authUser);
+      
+      // Determinar a role final (priorizar metadata, depois profile, depois default)
+      const finalRole = roleFromMetadata || profile?.role || defaultRole;
+      
+      console.log('✅ Role final determinada:', finalRole);
+      
+      // Criar objeto User com role mapeada corretamente
+      const userData: User = {
+        id: authUser.id,
+        name: profile?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
+        email: authUser.email!,
+        role: finalRole,
+        status: profile?.status || 'ativo',
+        avatar: profile?.avatar || authUser.user_metadata?.avatar || undefined,
+        company: profile?.company,
+        plan: profile?.plan,
+        clientType: profile?.clientType,
+        cnpj: profile?.cnpj,
+        responsavel: profile?.responsavel,
+        telefone: profile?.telefone,
+        logo: profile?.logo,
+        parentOfficeId: profile?.parentOfficeId
+      };
+      
+      console.log('👤 Objeto User final:', userData);
+      setUser(userData);
+      
+    } catch (error) {
+      console.error('❌ Erro ao processar usuário:', error);
+      toast.error('Erro ao carregar dados do usuário');
+    }
+  };
 
   const fetchUserProfile = async (authUser: SupabaseUser) => {
     try {
@@ -185,21 +235,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (profile) {
         console.log('✅ Perfil encontrado/criado:', profile);
-        setUser({
-          id: profile.id,
-          name: profile.name,
-          email: profile.email,
-          role: profile.role as UserRole,
-          status: profile.status,
-          avatar: profile.avatar || undefined
-        });
+        return profile;
       } else {
         console.error('❌ Falha ao obter/criar perfil após múltiplas tentativas');
-        toast.error('Erro ao carregar perfil do usuário');
+        return null;
       }
     } catch (error) {
       console.error('❌ Erro inesperado ao buscar perfil:', error);
-      toast.error('Erro ao carregar perfil do usuário');
+      return null;
     }
   };
 
