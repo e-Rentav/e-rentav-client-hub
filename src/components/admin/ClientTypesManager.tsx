@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ import {
   Calculator,
   TrendingUp
 } from 'lucide-react';
-import { Client, ClientType } from '@/contexts/AuthContext';
+import { Client, ClientType } from '@/types/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
