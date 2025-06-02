@@ -38,10 +38,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Função utilitária para delay entre tentativas
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Função utilitária para retry com backoff exponencial
 const retryWithBackoff = async <T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
@@ -56,10 +54,8 @@ const retryWithBackoff = async <T>(
       lastError = error;
       console.error(`❌ Tentativa ${attempt + 1}/${maxRetries} falhou:`, error);
       
-      // Se é o último retry, não espera
       if (attempt === maxRetries - 1) break;
       
-      // Backoff exponencial: 1s, 2s, 4s
       const waitTime = baseDelay * Math.pow(2, attempt);
       console.log(`⏳ Aguardando ${waitTime}ms antes da próxima tentativa...`);
       await delay(waitTime);
@@ -81,7 +77,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         console.log('🔄 Inicializando autenticação...');
 
-        // Verificar sessão existente com retry robusto
         const currentSession = await retryWithBackoff(async () => {
           const { data: { session }, error } = await supabase.auth.getSession();
           
@@ -101,8 +96,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (error) {
         console.error('❌ Erro crítico na inicialização:', error);
-        // Em caso de erro crítico, ainda assim marca como não loading
-        // para que o usuário possa tentar fazer login manualmente
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -110,7 +103,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Configurar listener de mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log('🔔 Mudança de estado auth:', event, currentSession?.user?.email || 'Desconectado');
       
@@ -124,7 +116,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
       } else if (event === 'TOKEN_REFRESHED' && currentSession) {
         setSession(currentSession);
-        // Re-processar usuário para garantir que role ainda está correta
         if (currentSession.user) {
           await processAuthUser(currentSession.user);
         }
@@ -144,21 +135,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('👤 Processando usuário autenticado:', authUser.email);
       console.log('🔍 User metadata:', authUser.user_metadata);
       
-      // Extrair role do user_metadata com fallback
       const roleFromMetadata = authUser.user_metadata?.role as UserRole;
       const defaultRole: UserRole = 'cliente';
       
       console.log('📝 Role do metadata:', roleFromMetadata);
       
-      // Tentar buscar perfil no banco de dados com retry
       const profile = await fetchUserProfile(authUser);
       
-      // Determinar a role final (priorizar metadata, depois profile, depois default)
       const finalRole = roleFromMetadata || profile?.role || defaultRole;
       
       console.log('✅ Role final determinada:', finalRole);
       
-      // Criar objeto User com role mapeada corretamente
       const userData: User = {
         id: authUser.id,
         name: profile?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
@@ -189,7 +176,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('👤 Buscando perfil para:', authUser.email);
       
-      // Buscar perfil com retry robusto
       const profile = await retryWithBackoff(async () => {
         const { data: profileData, error } = await supabase
           .from('profiles')
@@ -199,7 +185,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (error) {
           if (error.code === 'PGRST116') {
-            // Perfil não existe, criar um novo
             console.log('🔨 Criando novo perfil...');
             const metaData = authUser.user_metadata || {};
             
@@ -241,7 +226,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('❌ Erro inesperado ao buscar perfil:', error);
-      // Em caso de erro, retornar null mas não bloquear o login
       return null;
     }
   };
@@ -252,7 +236,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('🔑 Tentando login para:', email);
       
-      // Login com retry robusto
       const result = await retryWithBackoff(async () => {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
@@ -270,9 +253,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             errorMessage = 'Por favor, confirme seu email antes de fazer login.';
           } else if (error.message.includes('Too many requests')) {
             errorMessage = 'Muitas tentativas de login. Tente novamente em alguns minutos.';
-          } else if (error.message.includes('Database error') || error.message.includes('unexpected_failure')) {
+          } else if (error.message.includes('Database error') || 
+                     error.message.includes('unexpected_failure') ||
+                     error.message.includes('email_change')) {
             errorMessage = 'Problema temporário no servidor. Tentando novamente...';
-            throw error; // Força retry para erros de banco
+            throw error;
           }
           
           throw new Error(errorMessage);
