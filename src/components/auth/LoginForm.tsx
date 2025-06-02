@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Building2, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { AlertCircle, Building2, Eye, EyeOff, Loader2, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { SignupForm } from './SignupForm';
@@ -18,6 +18,7 @@ export const LoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   
   const { login } = useAuth();
 
@@ -61,13 +62,21 @@ export const LoginForm = () => {
       
       if (!result.success) {
         setError(result.error || 'Falha no login. Tente novamente.');
+        setRetryCount(prev => prev + 1);
       }
     } catch (err) {
       console.error('❌ Erro no formulário de login:', err);
       setError('Erro inesperado. Verifique sua conexão e tente novamente.');
+      setRetryCount(prev => prev + 1);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleRetry = () => {
+    setError('');
+    setRetryCount(0);
+    handleSubmit(new Event('submit') as any);
   };
 
   if (showSignup) {
@@ -104,8 +113,28 @@ export const LoginForm = () => {
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription className="flex items-center justify-between">
+                  <span>{error}</span>
+                  {retryCount > 0 && error.includes('servidor') && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRetry}
+                      disabled={isSubmitting}
+                      className="ml-2 h-6 w-6 p-0"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                    </Button>
+                  )}
+                </AlertDescription>
               </Alert>
+            )}
+
+            {retryCount > 0 && (
+              <div className="text-sm text-muted-foreground text-center">
+                Tentativa {retryCount}/3 - Se o problema persistir, tente novamente em alguns minutos.
+              </div>
             )}
             
             <div className="space-y-2">
@@ -168,7 +197,7 @@ export const LoginForm = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Entrando...
+                  {retryCount > 0 ? `Tentando novamente...` : 'Entrando...'}
                 </>
               ) : (
                 'Entrar'

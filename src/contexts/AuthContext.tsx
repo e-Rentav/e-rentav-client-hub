@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
@@ -50,15 +49,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         console.log('🔄 Inicializando autenticação...');
 
-        // Verificar sessão existente
-        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+        // Verificar sessão existente com retry
+        let sessionAttempts = 0;
+        let currentSession = null;
         
-        if (sessionError) {
-          console.error('❌ Erro ao obter sessão:', sessionError);
-          if (mounted) {
-            setIsLoading(false);
+        while (sessionAttempts < 3 && !currentSession) {
+          try {
+            const { data: { session: attemptSession }, error: sessionError } = await supabase.auth.getSession();
+            
+            if (sessionError) {
+              console.error(`❌ Erro ao obter sessão (tentativa ${sessionAttempts + 1}):`, sessionError);
+              if (sessionError.message.includes('Database error') || sessionError.message.includes('unexpected_failure')) {
+                sessionAttempts++;
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+                continue;
+              }
+              break;
+            }
+            
+            currentSession = attemptSession;
+            break;
+          } catch (error) {
+            console.error(`❌ Erro inesperado na obtenção de sessão (tentativa ${sessionAttempts + 1}):`, error);
+            sessionAttempts++;
+            if (sessionAttempts < 3) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
           }
-          return;
         }
 
         console.log('📋 Sessão atual:', currentSession?.user?.email || 'Nenhuma sessão');
@@ -105,55 +122,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('👤 Buscando perfil para:', authUser.email);
       
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-
-      if (error) {
-        console.error('❌ Erro ao buscar perfil:', error);
-        
-        // Se perfil não existe, criar um novo
-        if (error.code === 'PGRST116') {
-          console.log('🔨 Criando novo perfil...');
-          const metaData = authUser.user_metadata || {};
-          
-          const newProfile = {
-            id: authUser.id,
-            name: metaData.name || authUser.email?.split('@')[0] || 'Usuário',
-            email: authUser.email!,
-            role: (metaData.role as UserRole) || 'cliente',
-            status: 'ativo' as const
-          };
-
-          const { data: createdProfile, error: createError } = await supabase
+      // Retry mechanism for profile fetch
+      let profileAttempts = 0;
+      let profile = null;
+      
+      while (profileAttempts < 3 && !profile) {
+        try {
+          const { data: profileData, error } = await supabase
             .from('profiles')
-            .insert(newProfile)
-            .select()
+            .select('*')
+            .eq('id', authUser.id)
             .single();
-            
-          if (createError) {
-            console.error('❌ Erro ao criar perfil:', createError);
-            toast.error('Erro ao criar perfil do usuário');
-            return;
+
+          if (error) {
+            if (error.code === 'PGRST116') {
+              // Perfil não existe, criar um novo
+              console.log('🔨 Criando novo perfil...');
+              const metaData = authUser.user_metadata || {};
+              
+              const newProfile = {
+                id: authUser.id,
+                name: metaData.name || authUser.email?.split('@')[0] || 'Usuário',
+                email: authUser.email!,
+                role: (metaData.role as UserRole) || 'cliente',
+                status: 'ativo' as const
+              };
+
+              const { data: createdProfile, error: createError } = await supabase
+                .from('profiles')
+                .insert(newProfile)
+                .select()
+                .single();
+                
+              if (createError) {
+                console.error('❌ Erro ao criar perfil:', createError);
+                profileAttempts++;
+                continue;
+              }
+              
+              profile = createdProfile;
+              break;
+            } else {
+              console.error(`❌ Erro ao buscar perfil (tentativa ${profileAttempts + 1}):`, error);
+              profileAttempts++;
+              if (profileAttempts < 3) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+              continue;
+            }
           }
           
-          console.log('✅ Perfil criado:', createdProfile);
-          setUser({
-            id: createdProfile.id,
-            name: createdProfile.name,
-            email: createdProfile.email,
-            role: createdProfile.role as UserRole,
-            status: createdProfile.status,
-            avatar: createdProfile.avatar || undefined
-          });
+          profile = profileData;
+          break;
+        } catch (error) {
+          console.error(`❌ Erro inesperado ao buscar perfil (tentativa ${profileAttempts + 1}):`, error);
+          profileAttempts++;
+          if (profileAttempts < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
         }
-        return;
       }
 
       if (profile) {
-        console.log('✅ Perfil encontrado:', profile);
+        console.log('✅ Perfil encontrado/criado:', profile);
         setUser({
           id: profile.id,
           name: profile.name,
@@ -162,6 +193,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           status: profile.status,
           avatar: profile.avatar || undefined
         });
+      } else {
+        console.error('❌ Falha ao obter/criar perfil após múltiplas tentativas');
+        toast.error('Erro ao carregar perfil do usuário');
       }
     } catch (error) {
       console.error('❌ Erro inesperado ao buscar perfil:', error);
@@ -175,33 +209,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('🔑 Tentando login para:', email);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password
-      });
+      // Retry mechanism for login
+      let loginAttempts = 0;
+      let loginResult = null;
+      
+      while (loginAttempts < 3 && !loginResult) {
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password
+          });
 
-      if (error) {
-        console.error('❌ Erro de login:', error);
-        let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
-        
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Email ou senha incorretos.';
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Por favor, confirme seu email antes de fazer login.';
-        } else if (error.message.includes('Too many requests')) {
-          errorMessage = 'Muitas tentativas de login. Tente novamente em alguns minutos.';
+          if (error) {
+            if (error.message.includes('Database error') || error.message.includes('unexpected_failure')) {
+              console.error(`❌ Erro de banco (tentativa ${loginAttempts + 1}):`, error);
+              loginAttempts++;
+              if (loginAttempts < 3) {
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+                continue;
+              }
+            }
+            
+            console.error('❌ Erro de login:', error);
+            let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
+            
+            if (error.message.includes('Invalid login credentials')) {
+              errorMessage = 'Email ou senha incorretos.';
+            } else if (error.message.includes('Email not confirmed')) {
+              errorMessage = 'Por favor, confirme seu email antes de fazer login.';
+            } else if (error.message.includes('Too many requests')) {
+              errorMessage = 'Muitas tentativas de login. Tente novamente em alguns minutos.';
+            } else if (error.message.includes('Database error')) {
+              errorMessage = 'Problema temporário no servidor. Tente novamente em alguns segundos.';
+            }
+            
+            toast.error(errorMessage);
+            setIsLoading(false);
+            return { success: false, error: errorMessage };
+          }
+
+          loginResult = data;
+          break;
+        } catch (error) {
+          console.error(`❌ Erro inesperado no login (tentativa ${loginAttempts + 1}):`, error);
+          loginAttempts++;
+          if (loginAttempts < 3) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
         }
-        
-        toast.error(errorMessage);
-        setIsLoading(false);
-        return { success: false, error: errorMessage };
       }
 
-      if (data.user) {
-        console.log('✅ Login bem-sucedido para:', data.user.email);
+      if (loginResult?.user) {
+        console.log('✅ Login bem-sucedido para:', loginResult.user.email);
         toast.success('Login realizado com sucesso!');
         setIsLoading(false);
         return { success: true };
+      } else {
+        const errorMessage = 'Problema no servidor. Tente novamente em alguns minutos.';
+        toast.error(errorMessage);
+        setIsLoading(false);
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
       console.error('❌ Erro inesperado no login:', error);
@@ -321,7 +388,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: error.message };
       }
 
-      // Atualizar estado local
       setUser(prev => prev ? { ...prev, ...updates } : null);
       toast.success('Perfil atualizado com sucesso!');
       return { success: true };
