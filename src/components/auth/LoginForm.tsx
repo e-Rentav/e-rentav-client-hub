@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Building2, Eye, EyeOff, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { AlertCircle, Building2, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { SignupForm } from './SignupForm';
@@ -15,91 +15,41 @@ export const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   
   const { login } = useAuth();
-
-  const validateForm = (): boolean => {
-    if (!email.trim()) {
-      setError('Email é obrigatório.');
-      return false;
-    }
-    
-    if (!email.includes('@') || !email.includes('.')) {
-      setError('Digite um email válido.');
-      return false;
-    }
-    
-    if (!password) {
-      setError('Senha é obrigatória.');
-      return false;
-    }
-    
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.');
-      return false;
-    }
-    
-    return true;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    console.log('🚀 Iniciando processo de login...');
+    setIsLoading(true);
 
     try {
-      const result = await login(email, password);
-      
-      if (!result.success) {
-        setError(result.error || 'Falha no login. Tente novamente.');
-        setRetryCount(prev => prev + 1);
+      const success = await login(email, password);
+      if (!success) {
+        setError('Credenciais inválidas. Verifique seu email e senha.');
       }
     } catch (err) {
-      console.error('❌ Erro no formulário de login:', err);
-      setError('Erro inesperado. Verifique sua conexão e tente novamente.');
-      setRetryCount(prev => prev + 1);
+      setError('Erro ao fazer login. Tente novamente.');
+      console.error('Login error:', err);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
-
-  const handleRetry = () => {
-    setError('');
-    setRetryCount(0);
-    handleSubmit(new Event('submit') as any);
-  };
-
-  const isDatabaseError = error.includes('servidor') || error.includes('Database') || error.includes('Tentando novamente');
 
   if (showSignup) {
     return <SignupForm onBackToLogin={() => setShowSignup(false)} />;
   }
 
   if (showForgotPassword) {
-    return (
-      <ForgotPasswordForm 
-        onBackToLogin={() => setShowForgotPassword(false)} 
-        onSwitchToSignup={() => {
-          setShowForgotPassword(false);
-          setShowSignup(true);
-        }}
-      />
-    );
+    return <ForgotPasswordForm onBackToLogin={() => setShowForgotPassword(false)} />;
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-erentav-primary to-erentav-secondary p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+      <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex items-center justify-center mb-4">
             <Building2 className="h-12 w-12 text-erentav-primary" />
@@ -115,74 +65,34 @@ export const LoginForm = () => {
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="flex items-center justify-between">
-                  <span>{error}</span>
-                  {retryCount > 0 && isDatabaseError && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRetry}
-                      disabled={isSubmitting}
-                      className="ml-2 h-6 w-6 p-0"
-                      title="Tentar novamente"
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                    </Button>
-                  )}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {retryCount > 0 && (
-              <Alert className="border-yellow-200 bg-yellow-50">
-                <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                <AlertDescription className="text-yellow-800">
-                  <div className="space-y-1">
-                    <div className="font-medium">Tentativa {retryCount}/3</div>
-                    <div className="text-sm">
-                      {isDatabaseError 
-                        ? 'Problema temporário de conexão. O sistema está tentando reconectar automaticamente.'
-                        : 'Se o problema persistir, verifique suas credenciais ou tente novamente em alguns minutos.'
-                      }
-                    </div>
-                  </div>
-                </AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (error) setError('');
-                }}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isSubmitting}
-                className="transition-all duration-200"
+                disabled={isLoading}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Senha *</Label>
+              <Label htmlFor="password">Senha</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Digite sua senha"
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (error) setError('');
-                  }}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isSubmitting}
-                  className="pr-10 transition-all duration-200"
+                  disabled={isLoading}
                 />
                 <Button
                   type="button"
@@ -190,7 +100,7 @@ export const LoginForm = () => {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isSubmitting}
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -205,26 +115,19 @@ export const LoginForm = () => {
           <CardFooter className="flex flex-col space-y-4">
             <Button 
               type="submit" 
-              className="w-full bg-erentav-primary hover:bg-erentav-primary/90 transition-all duration-200"
-              disabled={isSubmitting}
+              className="w-full bg-erentav-primary hover:bg-erentav-primary/90"
+              disabled={isLoading}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {retryCount > 0 ? `Tentando novamente...` : 'Entrando...'}
-                </>
-              ) : (
-                'Entrar'
-              )}
+              {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
             
             <div className="flex flex-col space-y-2 w-full">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full transition-all duration-200"
+                className="w-full"
                 onClick={() => setShowSignup(true)}
-                disabled={isSubmitting}
+                disabled={isLoading}
               >
                 Criar nova conta
               </Button>
@@ -232,9 +135,9 @@ export const LoginForm = () => {
               <Button
                 type="button"
                 variant="link"
-                className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="w-full text-sm text-muted-foreground"
                 onClick={() => setShowForgotPassword(true)}
-                disabled={isSubmitting}
+                disabled={isLoading}
               >
                 Esqueci minha senha
               </Button>
