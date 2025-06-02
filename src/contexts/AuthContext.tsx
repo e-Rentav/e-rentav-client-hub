@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Se não encontrou perfil, tentar criar um baseado nos metadados
         if (error.code === 'PGRST116') {
           console.log('Perfil não encontrado, tentando criar...');
-          const metaData = authUser.user_metadata || authUser.raw_user_meta_data || {};
+          const metaData = authUser.user_metadata || {};
           
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
