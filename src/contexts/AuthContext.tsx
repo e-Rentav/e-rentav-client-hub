@@ -37,6 +37,37 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Função utilitária para delay entre tentativas
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Função utilitária para retry com backoff exponencial
+const retryWithBackoff = async <T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> => {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      console.error(`❌ Tentativa ${attempt + 1}/${maxRetries} falhou:`, error);
+      
+      // Se é o último retry, não espera
+      if (attempt === maxRetries - 1) break;
+      
+      // Backoff exponencial: 1s, 2s, 4s
+      const waitTime = baseDelay * Math.pow(2, attempt);
+      console.log(`⏳ Aguardando ${waitTime}ms antes da próxima tentativa...`);
+      await delay(waitTime);
+    }
+  }
+  
+  throw lastError;
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -49,34 +80,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         console.log('🔄 Inicializando autenticação...');
 
-        // Verificar sessão existente com retry
-        let sessionAttempts = 0;
-        let currentSession = null;
-        
-        while (sessionAttempts < 3 && !currentSession) {
-          try {
-            const { data: { session: attemptSession }, error: sessionError } = await supabase.auth.getSession();
-            
-            if (sessionError) {
-              console.error(`❌ Erro ao obter sessão (tentativa ${sessionAttempts + 1}):`, sessionError);
-              if (sessionError.message.includes('Database error') || sessionError.message.includes('unexpected_failure')) {
-                sessionAttempts++;
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-                continue;
-              }
-              break;
-            }
-            
-            currentSession = attemptSession;
-            break;
-          } catch (error) {
-            console.error(`❌ Erro inesperado na obtenção de sessão (tentativa ${sessionAttempts + 1}):`, error);
-            sessionAttempts++;
-            if (sessionAttempts < 3) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
+        // Verificar sessão existente com retry robusto
+        const currentSession = await retryWithBackoff(async () => {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error('❌ Erro ao obter sessão:', error);
+            throw error;
           }
-        }
+          
+          return session;
+        });
 
         console.log('📋 Sessão atual:', currentSession?.user?.email || 'Nenhuma sessão');
 
@@ -85,7 +99,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await processAuthUser(currentSession.user);
         }
       } catch (error) {
-        console.error('❌ Erro inesperado na inicialização:', error);
+        console.error('❌ Erro crítico na inicialização:', error);
+        // Em caso de erro crítico, ainda assim marca como não loading
+        // para que o usuário possa tentar fazer login manualmente
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -107,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
       } else if (event === 'TOKEN_REFRESHED' && currentSession) {
         setSession(currentSession);
-        // Re-process user to ensure role is still correct
+        // Re-processar usuário para garantir que role ainda está correta
         if (currentSession.user) {
           await processAuthUser(currentSession.user);
         }
@@ -133,7 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('📝 Role do metadata:', roleFromMetadata);
       
-      // Tentar buscar perfil no banco de dados
+      // Tentar buscar perfil no banco de dados com retry
       const profile = await fetchUserProfile(authUser);
       
       // Determinar a role final (priorizar metadata, depois profile, depois default)
@@ -172,76 +188,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('👤 Buscando perfil para:', authUser.email);
       
-      // Retry mechanism for profile fetch
-      let profileAttempts = 0;
-      let profile = null;
-      
-      while (profileAttempts < 3 && !profile) {
-        try {
-          const { data: profileData, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', authUser.id)
-            .single();
+      // Buscar perfil com retry robusto
+      const profile = await retryWithBackoff(async () => {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
 
-          if (error) {
-            if (error.code === 'PGRST116') {
-              // Perfil não existe, criar um novo
-              console.log('🔨 Criando novo perfil...');
-              const metaData = authUser.user_metadata || {};
-              
-              const newProfile = {
-                id: authUser.id,
-                name: metaData.name || authUser.email?.split('@')[0] || 'Usuário',
-                email: authUser.email!,
-                role: (metaData.role as UserRole) || 'cliente',
-                status: 'ativo' as const
-              };
+        if (error) {
+          if (error.code === 'PGRST116') {
+            // Perfil não existe, criar um novo
+            console.log('🔨 Criando novo perfil...');
+            const metaData = authUser.user_metadata || {};
+            
+            const newProfile = {
+              id: authUser.id,
+              name: metaData.name || authUser.email?.split('@')[0] || 'Usuário',
+              email: authUser.email!,
+              role: (metaData.role as UserRole) || 'cliente',
+              status: 'ativo' as const
+            };
 
-              const { data: createdProfile, error: createError } = await supabase
-                .from('profiles')
-                .insert(newProfile)
-                .select()
-                .single();
-                
-              if (createError) {
-                console.error('❌ Erro ao criar perfil:', createError);
-                profileAttempts++;
-                continue;
-              }
+            const { data: createdProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert(newProfile)
+              .select()
+              .single();
               
-              profile = createdProfile;
-              break;
-            } else {
-              console.error(`❌ Erro ao buscar perfil (tentativa ${profileAttempts + 1}):`, error);
-              profileAttempts++;
-              if (profileAttempts < 3) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-              }
-              continue;
+            if (createError) {
+              console.error('❌ Erro ao criar perfil:', createError);
+              throw createError;
             }
-          }
-          
-          profile = profileData;
-          break;
-        } catch (error) {
-          console.error(`❌ Erro inesperado ao buscar perfil (tentativa ${profileAttempts + 1}):`, error);
-          profileAttempts++;
-          if (profileAttempts < 3) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            return createdProfile;
+          } else {
+            console.error('❌ Erro ao buscar perfil:', error);
+            throw error;
           }
         }
-      }
+        
+        return profileData;
+      });
 
       if (profile) {
         console.log('✅ Perfil encontrado/criado:', profile);
         return profile;
       } else {
-        console.error('❌ Falha ao obter/criar perfil após múltiplas tentativas');
+        console.error('❌ Falha ao obter/criar perfil');
         return null;
       }
     } catch (error) {
       console.error('❌ Erro inesperado ao buscar perfil:', error);
+      // Em caso de erro, retornar null mas não bloquear o login
       return null;
     }
   };
@@ -252,70 +251,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('🔑 Tentando login para:', email);
       
-      // Retry mechanism for login
-      let loginAttempts = 0;
-      let loginResult = null;
-      
-      while (loginAttempts < 3 && !loginResult) {
-        try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password
-          });
+      // Login com retry robusto
+      const result = await retryWithBackoff(async () => {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password
+        });
 
-          if (error) {
-            if (error.message.includes('Database error') || error.message.includes('unexpected_failure')) {
-              console.error(`❌ Erro de banco (tentativa ${loginAttempts + 1}):`, error);
-              loginAttempts++;
-              if (loginAttempts < 3) {
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
-                continue;
-              }
-            }
-            
-            console.error('❌ Erro de login:', error);
-            let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
-            
-            if (error.message.includes('Invalid login credentials')) {
-              errorMessage = 'Email ou senha incorretos.';
-            } else if (error.message.includes('Email not confirmed')) {
-              errorMessage = 'Por favor, confirme seu email antes de fazer login.';
-            } else if (error.message.includes('Too many requests')) {
-              errorMessage = 'Muitas tentativas de login. Tente novamente em alguns minutos.';
-            } else if (error.message.includes('Database error')) {
-              errorMessage = 'Problema temporário no servidor. Tente novamente em alguns segundos.';
-            }
-            
-            toast.error(errorMessage);
-            setIsLoading(false);
-            return { success: false, error: errorMessage };
+        if (error) {
+          console.error('❌ Erro de login:', error);
+          
+          let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
+          
+          if (error.message.includes('Invalid login credentials')) {
+            errorMessage = 'Email ou senha incorretos.';
+          } else if (error.message.includes('Email not confirmed')) {
+            errorMessage = 'Por favor, confirme seu email antes de fazer login.';
+          } else if (error.message.includes('Too many requests')) {
+            errorMessage = 'Muitas tentativas de login. Tente novamente em alguns minutos.';
+          } else if (error.message.includes('Database error') || error.message.includes('unexpected_failure')) {
+            errorMessage = 'Problema temporário no servidor. Tentando novamente...';
+            throw error; // Força retry para erros de banco
           }
-
-          loginResult = data;
-          break;
-        } catch (error) {
-          console.error(`❌ Erro inesperado no login (tentativa ${loginAttempts + 1}):`, error);
-          loginAttempts++;
-          if (loginAttempts < 3) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          }
+          
+          throw new Error(errorMessage);
         }
-      }
 
-      if (loginResult?.user) {
-        console.log('✅ Login bem-sucedido para:', loginResult.user.email);
+        return data;
+      });
+
+      if (result?.user) {
+        console.log('✅ Login bem-sucedido para:', result.user.email);
         toast.success('Login realizado com sucesso!');
         setIsLoading(false);
         return { success: true };
       } else {
-        const errorMessage = 'Problema no servidor. Tente novamente em alguns minutos.';
+        const errorMessage = 'Falha inesperada no login.';
         toast.error(errorMessage);
         setIsLoading(false);
         return { success: false, error: errorMessage };
       }
-    } catch (error) {
-      console.error('❌ Erro inesperado no login:', error);
-      const errorMessage = 'Erro inesperado. Tente novamente.';
+    } catch (error: any) {
+      console.error('❌ Erro final no login:', error);
+      const errorMessage = error.message || 'Erro inesperado. Tente novamente.';
       toast.error(errorMessage);
     }
     

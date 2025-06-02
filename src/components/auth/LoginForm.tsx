@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Building2, Eye, EyeOff, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, Building2, Eye, EyeOff, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { SignupForm } from './SignupForm';
@@ -79,6 +79,8 @@ export const LoginForm = () => {
     handleSubmit(new Event('submit') as any);
   };
 
+  const isDatabaseError = error.includes('servidor') || error.includes('Database') || error.includes('Tentando novamente');
+
   if (showSignup) {
     return <SignupForm onBackToLogin={() => setShowSignup(false)} />;
   }
@@ -115,7 +117,7 @@ export const LoginForm = () => {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="flex items-center justify-between">
                   <span>{error}</span>
-                  {retryCount > 0 && error.includes('servidor') && (
+                  {retryCount > 0 && isDatabaseError && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -123,6 +125,7 @@ export const LoginForm = () => {
                       onClick={handleRetry}
                       disabled={isSubmitting}
                       className="ml-2 h-6 w-6 p-0"
+                      title="Tentar novamente"
                     >
                       <RefreshCw className="h-3 w-3" />
                     </Button>
@@ -132,9 +135,20 @@ export const LoginForm = () => {
             )}
 
             {retryCount > 0 && (
-              <div className="text-sm text-muted-foreground text-center">
-                Tentativa {retryCount}/3 - Se o problema persistir, tente novamente em alguns minutos.
-              </div>
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  <div className="space-y-1">
+                    <div className="font-medium">Tentativa {retryCount}/3</div>
+                    <div className="text-sm">
+                      {isDatabaseError 
+                        ? 'Problema temporário de conexão. O sistema está tentando reconectar automaticamente.'
+                        : 'Se o problema persistir, verifique suas credenciais ou tente novamente em alguns minutos.'
+                      }
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
             )}
             
             <div className="space-y-2">
